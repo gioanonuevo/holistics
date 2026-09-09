@@ -5,6 +5,37 @@ Dashboard first_dashboard {
   block title: TextBlock {
     content: @md # Your title goes here ;;
   }
+  block v_mjxg: VizBlock {
+    label: 'Average Attention Seconds by Ad Id'
+    viz: ColumnChart {
+      dataset: attention
+      x_axis: VizFieldFull {
+        ref: r(data_pipeline_attention_seconds.ad_id)
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        series {
+          field: VizFieldFull {
+            ref: r(attention.average_attention_seconds)
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+      }
+      settings {
+        row_limit: 5000
+        x_axis_show_null_datetime: false
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
 
   view: CanvasLayout {
     label: 'View 1'
@@ -15,11 +46,13 @@ Dashboard first_dashboard {
     block title {
       position: pos(20, 20, 1260, 60)
     }
+    block v_mjxg {
+      position: pos(270, 90, 620, 420)
+    }
     mobile {
       mode: 'auto'
     }
   }
 
   theme: H.themes.vanilla
-
 }
