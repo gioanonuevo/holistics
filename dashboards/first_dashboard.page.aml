@@ -3,7 +3,7 @@ Dashboard first_dashboard {
   description: ''
   owner: 'ganonuevo@verticalcity.com'
   block title: TextBlock {
-    content: @md # Your title goes here ;;
+    content: @md #TEST VC DASH;;
   }
   block v_mjxg: VizBlock {
     label: 'Average Attention Seconds by Ad Id'
