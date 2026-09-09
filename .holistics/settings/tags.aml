@@ -1,0 +1,85 @@
+// #############################################################
+// 📘 TAGGING SYSTEM OVERVIEW
+//
+// This section defines a reusable tagging system to help BI teams manage:
+// - 🎯 System: Special tags with automated behaviors (endorsement & archival)
+// - 📊 Status: Track content maturity and maintenance needs
+// - 🧑‍💼 Owner: Identify which team maintains this content
+//
+// 🎯 PURPOSE:
+// Tags help BI teams communicate quality, lifecycle, and ownership directly
+// inside the reporting tool. It's part of a best practice for dashboard governance.
+//
+// 🛠️ SETUP INSTRUCTIONS:
+// For more information, visit our public docs:
+// - https://docs.holistics.io/docs/find-organize/tags
+// - https://docs.holistics.io/docs/find-organize/content-endorsement
+// - https://docs.holistics.io/docs/find-organize/archive
+//
+// #############################################################
+
+// ---------------------
+// 🎯 SYSTEM TAGS
+// Special tags with automated platform behaviors
+// ---------------------
+
+Tag {
+  name: 'Endorsed'
+  color: '#00ff00'
+  description: 'The item is highly recommended.'
+}
+
+Tag {
+  name: 'Archived'
+  color: '#808080'
+  description: 'The item is no longer maintained and only preserved for historical or reference purposes.'
+}
+
+// ---------------------
+// 📊 STATUS TAGS
+// Track content maturity and maintenance needs
+// ---------------------
+
+Tag {
+  name: 'Status/Active'
+  color: '#00ffff'
+  description: 'Indicates the item is finalized, maintained, and currently in use for official purposes.'
+}
+
+Tag {
+  name: 'Status/Draft'
+  color: '#ffa500'
+  description: 'Indicates the item is in development and not yet finalized for official use.'
+}
+
+Tag {
+  name: 'Status/Error'
+  color: '#ff0000'
+  description: 'Indicates the presence of issues or inaccuracies that require correction before use.'
+}
+
+// ---------------------
+// 🧑‍💼 OWNER TAGS
+// Identify which team or department owns and maintains this content
+// ---------------------
+
+Tag {
+  name: 'Owner/Sales'
+  color: '#800080'
+  description: @md Maintained by the **Sales team**.
+Revenue, pipeline, and customer acquisition metrics.;;
+}
+
+Tag {
+  name: 'Owner/Marketing'
+  color: '#800080'
+  description: @md Maintained by the **Marketing team**.
+Campaign, channel, and brand performance.;;
+}
+
+Tag {
+  name: 'Owner/Finance'
+  color: '#800080'
+  description: @md Maintained by the **Finance team**.
+Revenue, costs, budgets, and forecasts.;;
+}
