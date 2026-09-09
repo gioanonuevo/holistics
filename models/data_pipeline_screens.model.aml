@@ -1,0 +1,267 @@
+Model data_pipeline_screens {
+  type: 'table'
+  label: 'Screens'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension id {
+    label: 'Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.id }};;
+  }
+  dimension screen_name {
+    label: 'Screen Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.screen_name }};;
+  }
+  dimension display_id {
+    label: 'Display Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.display_id }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension property_name {
+    label: 'Property Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_name }};;
+  }
+  dimension plan_id {
+    label: 'Plan Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.plan_id }};;
+  }
+  dimension plan_name {
+    label: 'Plan Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.plan_name }};;
+  }
+  dimension organization_id {
+    label: 'Organization Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.organization_id }};;
+  }
+  dimension organization_name {
+    label: 'Organization Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.organization_name }};;
+  }
+  dimension status_raw {
+    label: 'Status Raw'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.status_raw }};;
+  }
+  dimension status_text {
+    label: 'Status Text'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.status_text }};;
+  }
+  dimension health_status_raw {
+    label: 'Health Status Raw'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.health_status_raw }};;
+  }
+  dimension health_status_text {
+    label: 'Health Status Text'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.health_status_text }};;
+  }
+  dimension ad_ready {
+    label: 'Ad Ready'
+    type: 'truefalse'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_ready }};;
+  }
+  dimension vision_enabled {
+    label: 'Vision Enabled'
+    type: 'truefalse'
+    hidden: false
+    definition: @sql {{ #SOURCE.vision_enabled }};;
+  }
+  dimension loop_id {
+    label: 'Loop Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.loop_id }};;
+  }
+  dimension device_id {
+    label: 'Device Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.device_id }};;
+  }
+  dimension venue_id {
+    label: 'Venue Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.venue_id }};;
+  }
+  dimension screen_index {
+    label: 'Screen Index'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.screen_index }};;
+  }
+  dimension last_seen_at {
+    label: 'Last Seen At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.last_seen_at }};;
+  }
+  dimension is_recently_active {
+    label: 'Is Recently Active'
+    type: 'truefalse'
+    hidden: false
+    definition: @sql {{ #SOURCE.is_recently_active }};;
+  }
+  dimension health_checked_at {
+    label: 'Health Checked At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.health_checked_at }};;
+  }
+  dimension metadata {
+    label: 'Metadata'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.metadata }};;
+  }
+  dimension tags {
+    label: 'Tags'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.tags }};;
+  }
+  dimension model {
+    label: 'Model'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.model }};;
+  }
+  dimension notes {
+    label: 'Notes'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.notes }};;
+  }
+  dimension location {
+    label: 'Location'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.location }};;
+  }
+  dimension location_detail {
+    label: 'Location Detail'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.location_detail }};;
+  }
+  dimension screen_size {
+    label: 'Screen Size'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.screen_size }};;
+  }
+  dimension orientation {
+    label: 'Orientation'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.orientation }};;
+  }
+  dimension resolution {
+    label: 'Resolution'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.resolution }};;
+  }
+  dimension content_area_height {
+    label: 'Content Area Height'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.content_area_height }};;
+  }
+  dimension content_area_width {
+    label: 'Content Area Width'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.content_area_width }};;
+  }
+  dimension connectivity_method {
+    label: 'Connectivity Method'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.connectivity_method }};;
+  }
+  dimension vision_enabled_custom {
+    label: 'Vision Enabled Custom'
+    type: 'truefalse'
+    hidden: false
+    definition: @sql {{ #SOURCE.vision_enabled_custom }};;
+  }
+  dimension camera_type {
+    label: 'Camera Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.camera_type }};;
+  }
+  dimension mac_address {
+    label: 'Mac Address'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.mac_address }};;
+  }
+  dimension firmware_version {
+    label: 'Firmware Version'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.firmware_version }};;
+  }
+  dimension operating_system {
+    label: 'Operating System'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.operating_system }};;
+  }
+  dimension deleted_at {
+    label: 'Deleted At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.deleted_at }};;
+  }
+  dimension is_deleted {
+    label: 'Is Deleted'
+    type: 'truefalse'
+    hidden: false
+    definition: @sql {{ #SOURCE.is_deleted }};;
+  }
+  dimension created_at {
+    label: 'Created At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.created_at }};;
+  }
+  dimension updated_at {
+    label: 'Updated At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.updated_at }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`screens`'
+}

@@ -1,0 +1,345 @@
+Model data_pipeline_properties {
+  type: 'table'
+  label: 'Properties'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension id {
+    label: 'Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.id }};;
+  }
+  dimension property_number {
+    label: 'Property Number'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_number }};;
+  }
+  dimension name {
+    label: 'Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.name }};;
+  }
+  dimension organization_id {
+    label: 'Organization Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.organization_id }};;
+  }
+  dimension organization_name {
+    label: 'Organization Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.organization_name }};;
+  }
+  dimension status_raw {
+    label: 'Status Raw'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.status_raw }};;
+  }
+  dimension status_text {
+    label: 'Status Text'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.status_text }};;
+  }
+  dimension test {
+    label: 'Test'
+    type: 'truefalse'
+    hidden: false
+    definition: @sql {{ #SOURCE.test }};;
+  }
+  dimension verified_at {
+    label: 'Verified At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.verified_at }};;
+  }
+  dimension is_verified {
+    label: 'Is Verified'
+    type: 'truefalse'
+    hidden: false
+    definition: @sql {{ #SOURCE.is_verified }};;
+  }
+  dimension property_type {
+    label: 'Property Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_type }};;
+  }
+  dimension property_type_text {
+    label: 'Property Type Text'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_type_text }};;
+  }
+  dimension venue_industry {
+    label: 'Venue Industry'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.venue_industry }};;
+  }
+  dimension venue_category {
+    label: 'Venue Category'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.venue_category }};;
+  }
+  dimension venue_code {
+    label: 'Venue Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.venue_code }};;
+  }
+  dimension street_number {
+    label: 'Street Number'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.street_number }};;
+  }
+  dimension street_name {
+    label: 'Street Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.street_name }};;
+  }
+  dimension street_address {
+    label: 'Street Address'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.street_address }};;
+  }
+  dimension city {
+    label: 'City'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.city }};;
+  }
+  dimension region {
+    label: 'Region'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.region }};;
+  }
+  dimension region_short {
+    label: 'Region Short'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.region_short }};;
+  }
+  dimension country {
+    label: 'Country'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.country }};;
+  }
+  dimension postal_code {
+    label: 'Postal Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.postal_code }};;
+  }
+  dimension latitude {
+    label: 'Latitude'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.latitude }};;
+  }
+  dimension longitude {
+    label: 'Longitude'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.longitude }};;
+  }
+  dimension building_name {
+    label: 'Building Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.building_name }};;
+  }
+  dimension building_url {
+    label: 'Building Url'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.building_url }};;
+  }
+  dimension elevator_contractor {
+    label: 'Elevator Contractor'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.elevator_contractor }};;
+  }
+  dimension provider_name {
+    label: 'Provider Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.provider_name }};;
+  }
+  dimension no_of_floors {
+    label: 'No Of Floors'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.no_of_floors }};;
+  }
+  dimension no_of_units {
+    label: 'No Of Units'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.no_of_units }};;
+  }
+  dimension property_notes {
+    label: 'Property Notes'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_notes }};;
+  }
+  dimension primary_contact_name {
+    label: 'Primary Contact Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.primary_contact_name }};;
+  }
+  dimension primary_contact_phone {
+    label: 'Primary Contact Phone'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.primary_contact_phone }};;
+  }
+  dimension primary_contact_email {
+    label: 'Primary Contact Email'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.primary_contact_email }};;
+  }
+  dimension billing_contact_name {
+    label: 'Billing Contact Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.billing_contact_name }};;
+  }
+  dimension billing_contact_phone {
+    label: 'Billing Contact Phone'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.billing_contact_phone }};;
+  }
+  dimension billing_contact_email {
+    label: 'Billing Contact Email'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.billing_contact_email }};;
+  }
+  dimension amenities {
+    label: 'Amenities'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.amenities }};;
+  }
+  dimension ad_restrictions {
+    label: 'Ad Restrictions'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_restrictions }};;
+  }
+  dimension metadata {
+    label: 'Metadata'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.metadata }};;
+  }
+  dimension total_screens {
+    label: 'Total Screens'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.total_screens }};;
+  }
+  dimension ad_ready_screens {
+    label: 'Ad Ready Screens'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_ready_screens }};;
+  }
+  dimension total_ad_enabled_screens {
+    label: 'Total Ad Enabled Screens'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.total_ad_enabled_screens }};;
+  }
+  dimension avg_fullscreen_loop_spots {
+    label: 'Avg Fullscreen Loop Spots'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.avg_fullscreen_loop_spots }};;
+  }
+  dimension avg_non_fullscreen_loop_spots {
+    label: 'Avg Non Fullscreen Loop Spots'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.avg_non_fullscreen_loop_spots }};;
+  }
+  dimension avg_total_loop_spots {
+    label: 'Avg Total Loop Spots'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.avg_total_loop_spots }};;
+  }
+  dimension combined_updated_at {
+    label: 'Combined Updated At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.combined_updated_at }};;
+  }
+  dimension activity_total_notices {
+    label: 'Activity Total Notices'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.activity_total_notices }};;
+  }
+  dimension activity_active_notices {
+    label: 'Activity Active Notices'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.activity_active_notices }};;
+  }
+  dimension activity_recent_notices {
+    label: 'Activity Recent Notices'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.activity_recent_notices }};;
+  }
+  dimension activity_property_managers {
+    label: 'Activity Property Managers'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.activity_property_managers }};;
+  }
+  dimension deleted_at {
+    label: 'Deleted At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.deleted_at }};;
+  }
+  dimension is_deleted {
+    label: 'Is Deleted'
+    type: 'truefalse'
+    hidden: false
+    definition: @sql {{ #SOURCE.is_deleted }};;
+  }
+  dimension created_at {
+    label: 'Created At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.created_at }};;
+  }
+  dimension updated_at {
+    label: 'Updated At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.updated_at }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`properties`'
+}

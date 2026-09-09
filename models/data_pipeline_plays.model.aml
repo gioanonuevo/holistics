@@ -1,0 +1,99 @@
+Model data_pipeline_plays {
+  type: 'table'
+  label: 'Plays'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension impression_type {
+    label: 'Impression Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.impression_type }};;
+  }
+  dimension uuid {
+    label: 'Uuid'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.uuid }};;
+  }
+  dimension start_at {
+    label: 'Start At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at }};;
+  }
+  dimension mac_address {
+    label: 'Mac Address'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.mac_address }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension ad_length {
+    label: 'Ad Length'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_length }};;
+  }
+  dimension ad_end {
+    label: 'Ad End'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_end }};;
+  }
+  dimension display_id {
+    label: 'Display Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.display_id }};;
+  }
+  dimension provider {
+    label: 'Provider'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.provider }};;
+  }
+  dimension advertiser {
+    label: 'Advertiser'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.advertiser }};;
+  }
+  dimension creative_category {
+    label: 'Creative Category'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.creative_category }};;
+  }
+  dimension content_type {
+    label: 'Content Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.content_type }};;
+  }
+  dimension version {
+    label: 'Version'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.version }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`plays`'
+}

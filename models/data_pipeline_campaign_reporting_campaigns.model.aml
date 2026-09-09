@@ -1,0 +1,87 @@
+Model data_pipeline_campaign_reporting_campaigns {
+  type: 'table'
+  label: 'Campaign Reporting Campaigns'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension campaign_name {
+    label: 'Campaign Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_name }};;
+  }
+  dimension start_at {
+    label: 'Start At'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at }};;
+  }
+  dimension end_at {
+    label: 'End At'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.end_at }};;
+  }
+  dimension campaign_type {
+    label: 'Campaign Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_type }};;
+  }
+  dimension advertiser {
+    label: 'Advertiser'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.advertiser }};;
+  }
+  dimension agency {
+    label: 'Agency'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.agency }};;
+  }
+  dimension contract {
+    label: 'Contract'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.contract }};;
+  }
+  dimension owner {
+    label: 'Owner'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.owner }};;
+  }
+  dimension campaign_number {
+    label: 'Campaign Number'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_number }};;
+  }
+  dimension created_at {
+    label: 'Created At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.created_at }};;
+  }
+  dimension updated_at {
+    label: 'Updated At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.updated_at }};;
+  }
+  dimension currency_code {
+    label: 'Currency Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.currency_code }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`campaign_reporting_campaigns`'
+}

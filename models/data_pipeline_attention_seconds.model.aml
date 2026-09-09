@@ -1,0 +1,75 @@
+Model data_pipeline_attention_seconds {
+  type: 'table'
+  label: 'Attention Seconds'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension uuid {
+    label: 'Uuid'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.uuid }};;
+  }
+  dimension start_at_utc {
+    label: 'Start At Utc'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at_utc }};;
+  }
+  dimension device_id {
+    label: 'Device Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.device_id }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension screen {
+    label: 'Screen'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.screen }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension attention_seconds {
+    label: 'Attention Seconds'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.attention_seconds }};;
+  }
+  dimension attention_seconds_true {
+    label: 'Attention Seconds True'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.attention_seconds_true }};;
+  }
+  dimension ad_length {
+    label: 'Ad Length'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_length }};;
+  }
+  dimension play_id {
+    label: 'Play Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.play_id }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`attention_seconds`'
+}

@@ -1,0 +1,51 @@
+Model data_pipeline_plays_summary {
+  type: 'table'
+  label: 'Plays Summary'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension date {
+    label: 'Date'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.date }};;
+  }
+  dimension mac_address {
+    label: 'Mac Address'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.mac_address }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension report_code {
+    label: 'Report Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.report_code }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension impressions {
+    label: 'Impressions'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.impressions }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`plays_summary`'
+}

@@ -1,0 +1,63 @@
+Model data_pipeline_plays_summary_hourly {
+  type: 'table'
+  label: 'Plays Summary Hourly'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension start_at_utc {
+    label: 'Start At Utc'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at_utc }};;
+  }
+  dimension start_at_local {
+    label: 'Start At Local'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at_local }};;
+  }
+  dimension hour_of_day {
+    label: 'Hour Of Day'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.hour_of_day }};;
+  }
+  dimension mac_address {
+    label: 'Mac Address'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.mac_address }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension report_code {
+    label: 'Report Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.report_code }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension impressions {
+    label: 'Impressions'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.impressions }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`plays_summary_hourly`'
+}
