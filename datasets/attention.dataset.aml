@@ -13,4 +13,12 @@ Dataset attention {
   relationships: [
   ]
   owner: 'ganonuevo@verticalcity.com'
+  metric average_attention_seconds {
+    label: "Average Attention Seconds"
+    type: "number"
+    hidden: false
+    description: ""
+    definition: @aql avg(data_pipeline_attention_seconds.attention_seconds_true);;
+    format: "none"
+  }
 }
