@@ -15,6 +15,14 @@ Model data_pipeline_attention_seconds {
     hidden: false
     definition: @sql {{ #SOURCE.start_at_utc }};;
   }
+
+  dimension start_date_utc {
+    label: 'Start Date (UTC)'
+    type: 'date'
+    hidden: true
+    description: 'UTC calendar date derived from Start At Utc; used for date-dimension relationships.'
+    definition: @sql DATE({{ start_at_utc }}) ;;
+  }
   dimension device_id {
     label: 'Device Id'
     type: 'text'
