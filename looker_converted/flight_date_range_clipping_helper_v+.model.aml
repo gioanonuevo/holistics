@@ -1,0 +1,31 @@
+//////////////////////////////////////////////////////////
+// This file is auto-generated from the below Looker file
+// File: looker/vision+/flight_date_range_clipping_helper_v+.view.lkml
+//////////////////////////////////////////////////////////
+
+Model flight_date_range_clipping_helper_v {
+  type: 'query'
+  data_source_name: '<Fill in the data source name you have connected>'
+  query: @sql
+    <Liquid requires manual conversion> 
+  ;;
+
+  models: []
+    
+  dimension dates {
+    label: 'dates'
+    type: 'date'
+    definition: @sql {{ #SOURCE.dates }} ;;
+    // Not supported properties:
+    //   datatype: date
+  }
+
+    
+  measure count_test_helper {
+    label: 'count_test_helper'
+    type: 'number'
+    definition: @sql {{ #SOURCE.count_test_helper }} ;;
+    hidden: true
+    aggregation_type: 'count'
+  }
+}
