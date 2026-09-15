@@ -82,7 +82,6 @@ Model flight_date_range_clipping_helper_v {
     //   datatype: date
   }
 
-    
   measure count_test_helper {
     label: 'count_test_helper'
     type: 'number'
