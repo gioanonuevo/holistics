@@ -3,7 +3,7 @@
 // File: looker/vision+/flight_date_range_clipping_helper_v+.view.lkml
 //////////////////////////////////////////////////////////
 
-Model flight_date_range_clipping_helper_v {
+Model flight_date_range_clipping_helper_v = original_model.extend({}) {
   type: 'query'
   data_source_name: 'vc_data_warehouse'
 
