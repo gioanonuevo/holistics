@@ -9,6 +9,8 @@ Dataset attention {
     data_pipeline_campaign_reporting_flights,
     data_pipeline_properties,
     data_pipeline_screens
+    ,
+    flight_date_range_clipping_helper_v
   ]
   relationships: [
     relationship(data_pipeline_attention_seconds.campaign_id > data_pipeline_campaign_reporting_campaigns.campaign_id, true),
