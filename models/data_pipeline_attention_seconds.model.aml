@@ -35,7 +35,7 @@ Model data_pipeline_attention_seconds {
   }
   dimension campaign_id {
     label: 'Campaign Id'
-    type: 'text'
+    type: 'number'
     hidden: false
     definition: @sql {{ #SOURCE.campaign_id }};;
   }
