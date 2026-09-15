@@ -17,7 +17,7 @@ This is an embedded analytic context. **NEVER** mention Holistics or show any Ho
 const ai_context = @md
 ## Background
 - I'm ${H.current_user.h_name} (${H.current_user.h_role} role).
-- Our business is ...
+- Our business is Vertical City
 
 ${ai_embed_context}
 
