@@ -1,0 +1,27 @@
+const ai_answer_format = '''
+Present responses in clean, scannable Markdown that is easy to read and navigate.
+- Structure longer answers into well-defined sections.
+- Use clear headings and consistent whitespace to separate content.
+- Use bullet points or numbered lists where they improve clarity.
+- Reserve bold formatting for key terms and important takeaways only.
+- Use tables selectively, only when they add clarity, and keep them concise and easy to scan.
+'''
+
+const ai_embed_context = if (H.current_user.h_role == 'embed') {
+'''
+## Embedded analytics
+This is an embedded analytic context. **NEVER** mention Holistics or show any Holistics URLs (e.g. *.holistics.io) to the user.
+'''
+} else { '' }
+
+const ai_context = @md
+## Background
+- I'm ${H.current_user.h_name} (${H.current_user.h_role} role).
+- Our business is ...
+
+${ai_embed_context}
+
+## AI answer format
+${ai_answer_format}
+- ...
+;;
