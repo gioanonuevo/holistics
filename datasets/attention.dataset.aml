@@ -11,9 +11,11 @@ Dataset attention {
     data_pipeline_screens
   ]
   relationships: [
-    relationship(data_pipeline_attention_seconds.campaign_id > data_pipeline_campaign_reporting_campaigns.campaign_id, true)
+    relationship(data_pipeline_attention_seconds.campaign_id > data_pipeline_campaign_reporting_campaigns.campaign_id, true),
+    relationship(data_pipeline_attention_seconds.property_id > data_pipeline_properties.id, true)
   ]
   owner: 'ganonuevo@verticalcity.com'
+
   metric average_attention_seconds {
     label: "Average Attention Seconds"
     type: "number"
