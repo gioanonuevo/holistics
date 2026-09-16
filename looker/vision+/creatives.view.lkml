@@ -6,7 +6,7 @@ view: creatives {
       campaign_group,
       creative_group,
       creative_group2
-       from `data_pipeline.stg_campaigns` campaigns
+      from `data_pipeline.stg_campaigns` campaigns
       left join
       `data_pipeline.stg_client_dashboard_campaign_groups_lu` campaign_groups
       ON
