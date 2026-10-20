@@ -1,0 +1,27 @@
+Model data_pipeline_stg_client_dashboard_creative_groups_lu {
+  type: 'table'
+  label: 'Creative Groups Lookup'
+  description: 'Creative group lookup used by the former clipping helper models.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension creative_id {
+    label: 'Creative Id'
+    type: 'text'
+    definition: @sql {{ #SOURCE.creative_id }};;
+  }
+
+  dimension creative_group {
+    label: 'Creative Group'
+    type: 'text'
+    definition: @sql {{ #SOURCE.creative_group }};;
+  }
+
+  dimension creative_group2 {
+    label: 'Creative Group 2'
+    type: 'text'
+    definition: @sql {{ #SOURCE.creative_group2 }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`stg_client_dashboard_creative_groups_lu`'
+}

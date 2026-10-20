@@ -1,0 +1,80 @@
+Model filter_model {
+  type: 'query'
+  label: 'Filter Model'
+  description: 'Campaign selection options. report_filter is the campaign id (Direct) or ad id (Programmatic). report_option is the same id with its flight window appended (id|flight_start|flight_end) so a single dashboard filter can drive both the network scope chain and the attention_base.report_option param, which clips the partitioned scan with constant date bounds.'
+  data_source_name: 'vc_data_warehouse'
+  dimension report_filter {
+    label: 'Report Filter'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.report_filter }};;
+  }
+  dimension report_option {
+    label: 'Report Option'
+    type: 'text'
+    hidden: false
+    description: 'report_filter|flight_start|flight_end, e.g. 10605|2026-08-12|2026-10-01. Bind the dashboard campaign filter to this field and to attention_base.report_option.'
+    definition: @sql {{ #SOURCE.report_option }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension type {
+    label: 'Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.type }};;
+  }
+  dimension flight_start {
+    label: 'Flight Start'
+    type: 'date'
+    hidden: false
+    description: 'Earliest flight start date across the rows sharing this report_filter.'
+    definition: @sql {{ #SOURCE.flight_start }};;
+  }
+  dimension flight_end {
+    label: 'Flight End'
+    type: 'date'
+    hidden: false
+    description: 'Latest flight end date across the rows sharing this report_filter.'
+    definition: @sql {{ #SOURCE.flight_end }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    SELECT DISTINCT
+      report_filter,
+      campaign_id,
+      ad_id,
+      type,
+      flight_start,
+      flight_end,
+      concat(report_filter, '|', cast(flight_start as string), '|', cast(flight_end as string)) as report_option
+    FROM (
+      select
+        report_filter,
+        campaign_id,
+        ad_id,
+        type,
+        min(date(start_at)) over (partition by report_filter, type) as flight_start,
+        max(date(end_at)) over (partition by report_filter, type) as flight_end
+      from (
+        select campaign_id as report_filter, campaign_id, ad_id, "Direct" as type, start_at, end_at
+        from `data_pipeline.stg_campaigns` where campaign_id is not null or campaign_id != ''
+        union all
+        select ad_id as report_filter, campaign_id, ad_id, "Programmatic" as type, start_at, end_at
+        from `data_pipeline.stg_campaigns` where ad_id is not null or ad_id != ''
+      )
+    );;
+  models: [
+  ]
+}

@@ -1,0 +1,60 @@
+Model data_pipeline_detection_demography {
+  type: 'table'
+  label: 'Detection Demography'
+  description: 'Demographic attributes for attention detections.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension uuid {
+    label: 'Uuid'
+    type: 'text'
+    definition: @sql {{ #SOURCE.uuid }};;
+    primary_key: true
+  }
+
+  dimension gender_pie {
+    label: 'Gender Pie'
+    type: 'text'
+    definition: @sql {{ #SOURCE.gender_pie }};;
+  }
+
+  dimension gender {
+    label: 'Gender'
+    type: 'text'
+    definition: @sql {{ #SOURCE.gender }};;
+  }
+
+  dimension mean_age {
+    label: 'Mean Age'
+    type: 'number'
+    definition: @sql {{ #SOURCE.mean_age }};;
+  }
+
+  dimension age_group {
+    label: 'Age Group'
+    type: 'text'
+    definition: @sql {{ #SOURCE.age_group }};;
+  }
+
+  dimension valid_age_group {
+    label: 'Valid Age Group'
+    type: 'truefalse'
+    hidden: true
+    description: 'Matches the age-group exclusion previously embedded inside derived query models.'
+    definition: @sql {{ age_group }} NOT IN ('18 below', 'no info') ;;
+  }
+
+  dimension generation {
+    label: 'Generation'
+    type: 'text'
+    definition: @sql {{ #SOURCE.generation }};;
+  }
+
+  dimension gender_v2 {
+    label: 'Gender V2'
+    type: 'text'
+    definition: @sql {{ #SOURCE.gender_v2 }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`detection_demography`'
+}

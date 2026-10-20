@@ -1,0 +1,92 @@
+Model data_pipeline_stg_campaigns {
+  type: 'table'
+  label: 'Campaign Scope'
+  description: 'Original campaign/ad scope used by the former parameterized helper query models.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+
+  dimension report_code {
+    label: 'Report Code'
+    type: 'text'
+    definition: @sql {{ #SOURCE.report_code }};;
+  }
+
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+
+  dimension campaign_ad_key {
+    label: 'Campaign Ad Key'
+    type: 'text'
+    hidden: true
+    description: 'Composite campaign/ad key for relationship modeling.'
+    definition: @sql CONCAT({{ campaign_id }}, '::', {{ ad_id }}) ;;
+  }
+
+  dimension advertiser {
+    label: 'Advertiser'
+    type: 'text'
+    definition: @sql {{ #SOURCE.advertiser }};;
+  }
+
+  dimension ad_length {
+    label: 'Ad Length'
+    type: 'number'
+    definition: @sql {{ #SOURCE.ad_length }};;
+  }
+
+  dimension ad_length_grouped {
+    label: 'Ad Length Grouped'
+    type: 'number'
+    definition: @sql
+      CASE
+        WHEN {{ ad_length }} BETWEEN 5 AND 7 THEN 5
+        WHEN {{ ad_length }} BETWEEN 8 AND 12 THEN 10
+        WHEN {{ ad_length }} BETWEEN 13 AND 16 THEN 15
+        WHEN {{ ad_length }} BETWEEN 17 AND 22 THEN 20
+        WHEN {{ ad_length }} BETWEEN 28 AND 32 THEN 30
+        ELSE {{ ad_length }}
+      END
+    ;;
+  }
+
+  dimension start_at {
+    label: 'Start At'
+    type: 'datetime'
+    definition: @sql {{ #SOURCE.start_at }};;
+  }
+
+  dimension start_date {
+    label: 'Start Date'
+    type: 'date'
+    definition: @sql DATE({{ start_at }}) ;;
+  }
+
+  dimension end_at {
+    label: 'End At'
+    type: 'datetime'
+    definition: @sql {{ #SOURCE.end_at }};;
+  }
+
+  dimension end_date {
+    label: 'End Date'
+    type: 'date'
+    definition: @sql DATE({{ end_at }}) ;;
+  }
+
+  dimension content_type {
+    label: 'Content Type'
+    type: 'text'
+    definition: @sql {{ #SOURCE.content_type }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`stg_campaigns`'
+}

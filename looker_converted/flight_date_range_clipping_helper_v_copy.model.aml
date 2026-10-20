@@ -1,0 +1,105 @@
+//////////////////////////////////////////////////////////
+// This file is auto-generated from the below Looker file
+// File: looker/vision+/flight_date_range_clipping_helper_v+.view.lkml
+//////////////////////////////////////////////////////////
+
+Model flight_date_range_clipping_helper_v_copy {
+  type: 'query'
+  data_source_name: 'vc_data_warehouse'
+
+  // Filters corresponding to the Looker Liquid conditions in the source view.
+  param frame_scope_campaign_id {
+    label: 'Frame Scope Campaign ID'
+    type: 'text'
+  }
+
+  param frame_scope_creative_id {
+    label: 'Frame Scope Creative ID'
+    type: 'text'
+  }
+
+  param frame_scope_report_id {
+    label: 'Frame Scope Report ID'
+    type: 'text'
+  }
+
+  param frame_scope_campaign_group {
+    label: 'Frame Scope Campaign Group'
+    type: 'text'
+  }
+
+  param frame_scope_creative_group {
+    label: 'Frame Scope Creative Group'
+    type: 'text'
+  }
+
+  param frame_scope_creative_group2 {
+    label: 'Frame Scope Creative Group 2'
+    type: 'text'
+  }
+
+  query: @sql
+    WITH creatives AS (
+      SELECT
+        campaigns.*,
+        campaign_group,
+        creative_group,
+        creative_group2
+      FROM `data_pipeline.stg_campaigns` AS campaigns
+      LEFT JOIN `data_pipeline.stg_client_dashboard_campaign_groups_lu` AS campaign_groups
+        ON campaigns.campaign_id = CAST(campaign_groups.campaign_id AS STRING)
+      LEFT JOIN `data_pipeline.stg_client_dashboard_creative_groups_lu` AS creative_groups
+        ON campaigns.ad_id = creative_groups.creative_id
+    ),
+    flight_date_bounds AS (
+      SELECT
+        MIN(DATE(start_at)) AS minimum_flight_date,
+        MAX(DATE(end_at)) AS maximum_flight_date
+      FROM creatives
+      WHERE {% filter(frame_scope_campaign_id) %} campaign_id {% end %}
+        AND {% filter(frame_scope_creative_id) %} ad_id {% end %}
+        AND {% filter(frame_scope_report_id) %} report_code {% end %}
+        AND {% filter(frame_scope_campaign_group) %} campaign_group {% end %}
+        AND {% filter(frame_scope_creative_group) %} creative_group {% end %}
+        AND {% filter(frame_scope_creative_group2) %} creative_group2 {% end %}
+    )
+    SELECT
+      dates,
+      minimum_flight_date,
+      maximum_flight_date
+    FROM flight_date_bounds,
+      UNNEST(GENERATE_DATE_ARRAY(minimum_flight_date, maximum_flight_date)) AS dates
+  ;;
+
+  models: []
+
+  dimension dates {
+    label: 'Date in Selected Flight Window'
+    type: 'date'
+    hidden: true
+    description: 'Each UTC calendar date from the earliest selected flight start through the latest selected flight end.'
+    definition: @sql {{ #SOURCE.dates }} ;;
+  }
+
+  dimension minimum_flight_date {
+    label: 'Minimum Flight Date'
+    type: 'date'
+    description: 'Earliest UTC flight date across the current scope selection.'
+    definition: @sql {{ #SOURCE.minimum_flight_date }} ;;
+  }
+
+  dimension maximum_flight_date {
+    label: 'Maximum Flight Date'
+    type: 'date'
+    description: 'Latest UTC flight date across the current scope selection.'
+    definition: @sql {{ #SOURCE.maximum_flight_date }} ;;
+  }
+
+  measure count_test_helper {
+    label: 'count_test_helper'
+    type: 'number'
+    definition: @sql {{ #SOURCE.count_test_helper }} ;;
+    hidden: true
+    aggregation_type: 'count'
+  }
+}

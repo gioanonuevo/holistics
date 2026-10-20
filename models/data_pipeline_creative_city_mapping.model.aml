@@ -1,0 +1,41 @@
+Model data_pipeline_creative_city_mapping {
+  type: 'query'
+  label: 'Creative City Mapping'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+
+  param frame_scope_campaign_id {
+    label: 'Frame Scope Campaign ID'
+    type: 'text'
+  }
+
+  param frame_scope_creative_id {
+    label: 'Frame Scope Creative ID'
+    type: 'text'
+  }
+
+  param frame_scope_report_id {
+    label: 'Frame Scope Report ID'
+    type: 'text'
+  }
+
+  query: @sql
+    SELECT DISTINCT
+      mapping.city
+    FROM `data_pipeline.creative_city_mapping` AS mapping
+    LEFT JOIN `data_pipeline.stg_campaigns` AS campaigns
+      ON mapping.campaign_id = campaigns.campaign_id
+      AND mapping.ad_id = campaigns.ad_id
+    WHERE {% filter(frame_scope_campaign_id) %} mapping.campaign_id {% end %}
+      AND {% filter(frame_scope_creative_id) %} mapping.ad_id {% end %}
+      AND {% filter(frame_scope_report_id) %} campaigns.report_code {% end %}
+  ;;
+  dimension city {
+    label: 'City'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.city }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+}

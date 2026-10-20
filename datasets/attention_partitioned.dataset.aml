@@ -1,0 +1,36 @@
+Dataset attention_partitioned {
+  label: 'attention_partitioned'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  models: [
+    flight_date_range_clipping_helper_v,
+    data_pipeline_attention_seconds_v2
+  ]
+  relationships: [
+    relationship(data_pipeline_attention_seconds_v2.start_date_utc > flight_date_range_clipping_helper_v.dates, true, nullable = false)
+  ]
+  metric _start {
+    label: "_start"
+    type: "date"
+    hidden: false
+    description: ""
+    definition: @aql max(flight_date_range_clipping_helper_v.minimum_flight_date) |keep_grains(keep_filters: true);;
+    format: "LLL dd yyyy"
+  }
+  metric _end {
+    label: "_end"
+    type: "date"
+    hidden: false
+    description: ""
+    definition: @aql max(flight_date_range_clipping_helper_v.maximum_flight_date) |keep_grains(keep_filters: true);;
+    format: "LLL dd yyyy"
+  }
+  dimension is_in_flight_range {
+    label: "Is in flight range"
+    type: "truefalse"
+    hidden: false
+    description: ""
+    definition: @aql data_pipeline_attention_seconds_v2.start_at_utc >= _start and data_pipeline_attention_seconds_v2.start_at_utc <= _end;;
+    model: data_pipeline_attention_seconds_v2
+  }
+}

@@ -1,0 +1,28 @@
+Model data_pipeline_stg_client_dashboard_campaign_groups_lu {
+  type: 'table'
+  label: 'Campaign Groups Lookup'
+  description: 'Campaign group lookup used by the former clipping helper models.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension campaign_group {
+    label: 'Campaign Group'
+    type: 'text'
+    definition: @sql {{ #SOURCE.campaign_group }};;
+  }
+
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'number'
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+
+  dimension campaign_id_text {
+    label: 'Campaign Id Text'
+    type: 'text'
+    hidden: true
+    definition: @sql CAST({{ campaign_id }} AS STRING) ;;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`stg_client_dashboard_campaign_groups_lu`'
+}

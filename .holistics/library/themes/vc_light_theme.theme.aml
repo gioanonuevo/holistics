@@ -1,0 +1,147 @@
+const vc_light_theme_tokens = {
+  primary: "oklch(0.31 0.085 250)",  secondary: "oklch(0.65 0.21 34)",  mode: "light",
+  background: "oklch(0.965 0.004 250)",  canvas_bg: "oklch(0.975 0.003 250)",  block_bg: "oklch(0.995 0.001 250)",
+  text_primary: "oklch(0.31 0.085 250)",  text_muted: "oklch(0.45 0.03 250)",  text_subtle: "oklch(0.58 0.02 250)",
+  border: "oklch(0.90 0.006 250)",  focus_ring: "oklch(0.65 0.21 34)",
+  semantic_success: "oklch(0.56 0.14 150)",  semantic_warning: "oklch(0.70 0.15 70)",  semantic_danger: "oklch(0.55 0.20 25)",
+  font_body: "'Fira Sans', Arial, sans-serif",  font_display: "Gilroy, 'Fira Sans', Arial, sans-serif",
+  corner_style: "sharp",  density: "comfortable",  elevation: "hairline"
+}
+
+ColorPalette vc_light_palette {
+  title: "Vertical City Light"
+  categorical {
+    colors: [
+      "oklch(0.55 0.14 250)",
+      "oklch(0.65 0.20 34)",
+      "oklch(0.64 0.12 170)",
+      "oklch(0.74 0.14 80)",
+      "oklch(0.62 0.17 304)",
+      "oklch(0.63 0.15 130)",
+      "oklch(0.59 0.18 350)",
+      "oklch(0.70 0.12 214)"
+    ]
+  }
+}
+
+PageTheme vc_light_theme {
+  title: "Vertical City Light"
+  color { data: vc_light_palette }
+  background { bg_color: vc_light_theme_tokens("background") }
+  canvas {
+    background { bg_color: vc_light_theme_tokens("canvas_bg") }
+    border {
+      border_width: 0
+      border_radius: 4
+      border_color: vc_light_theme_tokens("border")
+      border_style: "none"
+    }
+    shadow: "none"
+    opacity: 1
+  }
+  block {
+    background { bg_color: vc_light_theme_tokens("block_bg") }
+    border {
+      border_width: 1
+      border_style: "solid"
+      border_radius: 4
+      border_color: vc_light_theme_tokens("border")
+    }
+    shadow: "none"
+    padding: 16
+    opacity: 1
+    label {
+      font_family: vc_light_theme_tokens("font_display")
+      font_size: 14
+      font_color: vc_light_theme_tokens("text_primary")
+      font_weight: "semibold"
+      font_style: "normal"
+      letter_spacing: "0"
+    }
+    text {
+      font_family: vc_light_theme_tokens("font_body")
+      font_size: 13
+      font_color: vc_light_theme_tokens("text_muted")
+      font_weight: "normal"
+      font_style: "normal"
+    }
+  }
+  viz {
+    table {
+      general {
+        bg_color: vc_light_theme_tokens("block_bg")
+        font_color: vc_light_theme_tokens("text_muted")
+        font_family: vc_light_theme_tokens("font_body")
+        font_size: 13
+        border_color: vc_light_theme_tokens("border")
+        grid_color: vc_light_theme_tokens("border")
+        border_width: 1
+        hover_color: "oklch(0.995 0.004 250)"
+        banding_color: "oklch(0.98 0.004 250)"
+        cell_padding: DetailedSpacing { top: 10, right: 16, bottom: 10, left: 16 }
+        borders { outer: true, vertical: false, horizontal: true, header: true, row_header: false }
+      }
+      header {
+        bg_color: vc_light_theme_tokens("background")
+        font_color: vc_light_theme_tokens("text_primary")
+        font_size: 13
+        font_weight: "semibold"
+      }
+      sub_header {
+        bg_color: "oklch(0.98 0.004 250)"
+        font_color: vc_light_theme_tokens("text_muted")
+        font_size: 13
+        font_weight: "medium"
+      }
+      sub_title {
+        font_color: vc_light_theme_tokens("text_subtle")
+        font_size: 12
+        font_weight: "medium"
+      }
+      sparkline {
+        line { color: vc_light_theme_tokens("primary") }
+        column { color: vc_light_theme_tokens("primary") }
+      }
+    }
+    metric_kpi {
+      alignment: "left"
+      label {
+        font_family: vc_light_theme_tokens("font_body")
+        font_size: 20
+        font_color: vc_light_theme_tokens("text_muted")
+      }
+      value {
+        font_family: vc_light_theme_tokens("font_display")
+        font_size: 48
+        font_color: vc_light_theme_tokens("text_primary")
+      }
+      progress {
+        indicator { bg_color: vc_light_theme_tokens("primary") }
+        track { bg_color: vc_light_theme_tokens("border") }
+        text { font_color: vc_light_theme_tokens("text_muted") }
+      }
+      trend {
+        positive { text { font_color: vc_light_theme_tokens("semantic_success") font_weight: "medium" }  background { bg_color: "oklch(0.94 0.04 150)" } }
+        negative { text { font_color: vc_light_theme_tokens("semantic_danger") font_weight: "medium" }  background { bg_color: "oklch(0.94 0.04 25)" } }
+        neutral  { text { font_color: vc_light_theme_tokens("text_muted") font_weight: "normal" }  background { bg_color: "oklch(0.94 0.006 250)" } }
+      }
+    }
+  }
+  custom_css: @css
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap');
+    .dac-text-block {
+      font-family: 'Fira Sans', Arial, sans-serif;
+      font-size: 14px;
+      color: oklch(0.45 0.03 250);
+      line-height: 1.6;
+    }
+    .dac-text-block h1, .dac-text-block h2, .dac-text-block h3, .dac-text-block h4, .dac-text-block h5, .dac-text-block h6 {
+      font-family: Gilroy, 'Fira Sans', Arial, sans-serif;
+      color: oklch(0.31 0.085 250);
+      line-height: 1.3;
+      margin-top: 0;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+    }
+  ;;
+}

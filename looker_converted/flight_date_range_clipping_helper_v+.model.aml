@@ -51,11 +51,10 @@ Model flight_date_range_clipping_helper_v {
       LEFT JOIN `data_pipeline.stg_client_dashboard_creative_groups_lu` AS creative_groups
         ON campaigns.ad_id = creative_groups.creative_id
     ),
-    flight_date_ranges AS (
+    flight_date_bounds AS (
       SELECT
-        CAST(campaign_id AS NUMERIC) AS flight_id,
-        DATE(start_at) AS start_date,
-        DATE(end_at) AS end_date
+        MIN(DATE(start_at)) AS minimum_flight_date,
+        MAX(DATE(end_at)) AS maximum_flight_date
       FROM creatives
       WHERE {% filter(frame_scope_campaign_id) %} campaign_id {% end %}
         AND {% filter(frame_scope_creative_id) %} ad_id {% end %}
@@ -63,23 +62,37 @@ Model flight_date_range_clipping_helper_v {
         AND {% filter(frame_scope_campaign_group) %} campaign_group {% end %}
         AND {% filter(frame_scope_creative_group) %} creative_group {% end %}
         AND {% filter(frame_scope_creative_group2) %} creative_group2 {% end %}
-    ),
-    flight_date_arrays AS (
-      SELECT GENERATE_DATE_ARRAY(start_date, end_date, INTERVAL 1 DAY) AS date_arrays
-      FROM flight_date_ranges
     )
-    SELECT DISTINCT dates
-    FROM flight_date_arrays, UNNEST(date_arrays) AS dates
+    SELECT
+      dates,
+      minimum_flight_date,
+      maximum_flight_date
+    FROM flight_date_bounds,
+      UNNEST(GENERATE_DATE_ARRAY(minimum_flight_date, maximum_flight_date)) AS dates
   ;;
 
   models: []
-    
+
   dimension dates {
-    label: 'dates'
+    label: 'Date in Selected Flight Window'
     type: 'date'
+    hidden: true
+    description: 'Each UTC calendar date from the earliest selected flight start through the latest selected flight end.'
     definition: @sql {{ #SOURCE.dates }} ;;
-    // Not supported properties:
-    //   datatype: date
+  }
+
+  dimension minimum_flight_date {
+    label: 'Minimum Flight Date'
+    type: 'date'
+    description: 'Earliest UTC flight date across the current scope selection.'
+    definition: @sql {{ #SOURCE.minimum_flight_date }} ;;
+  }
+
+  dimension maximum_flight_date {
+    label: 'Maximum Flight Date'
+    type: 'date'
+    description: 'Latest UTC flight date across the current scope selection.'
+    definition: @sql {{ #SOURCE.maximum_flight_date }} ;;
   }
 
   measure count_test_helper {

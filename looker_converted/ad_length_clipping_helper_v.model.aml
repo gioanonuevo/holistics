@@ -1,0 +1,90 @@
+//////////////////////////////////////////////////////////
+// This file is auto-generated from the below Looker file
+// File: looker/vision+/ad_length_clipping_helper_v.view.lkml
+//////////////////////////////////////////////////////////
+
+Model ad_length_clipping_helper_v {
+  type: 'query'
+  data_source_name: 'vc_data_warehouse'
+
+  // Filters corresponding to the active Looker Liquid conditions in the source view.
+  param frame_scope_campaign_id {
+    label: 'Frame Scope Campaign ID'
+    type: 'text'
+  }
+
+  param frame_scope_creative_id {
+    label: 'Frame Scope Creative ID'
+    type: 'text'
+  }
+
+  param frame_scope_report_id {
+    label: 'Frame Scope Report ID'
+    type: 'text'
+  }
+
+  param frame_scope_campaign_group {
+    label: 'Frame Scope Campaign Group'
+    type: 'text'
+  }
+
+  param frame_scope_creative_group {
+    label: 'Frame Scope Creative Group'
+    type: 'text'
+  }
+
+  param frame_scope_creative_group2 {
+    label: 'Frame Scope Creative Group 2'
+    type: 'text'
+  }
+
+  query: @sql
+    WITH creatives AS (
+      SELECT
+        campaigns.*,
+        campaign_group,
+        creative_group,
+        creative_group2
+      FROM `data_pipeline.stg_campaigns` AS campaigns
+      LEFT JOIN `data_pipeline.stg_client_dashboard_campaign_groups_lu` AS campaign_groups
+        ON campaigns.campaign_id = CAST(campaign_groups.campaign_id AS STRING)
+      LEFT JOIN `data_pipeline.stg_client_dashboard_creative_groups_lu` AS creative_groups
+        ON campaigns.ad_id = creative_groups.creative_id
+    ),
+    ad_length_lookup AS (
+      SELECT
+        CASE
+          WHEN ad_length BETWEEN 5 AND 7 THEN 5
+          WHEN ad_length BETWEEN 8 AND 12 THEN 10
+          WHEN ad_length BETWEEN 13 AND 16 THEN 15
+          WHEN ad_length BETWEEN 17 AND 22 THEN 20
+          WHEN ad_length BETWEEN 28 AND 32 THEN 30
+          ELSE ad_length
+        END AS ad_length_grouped
+      FROM creatives
+      WHERE {% filter(frame_scope_campaign_id) %} campaign_id {% end %}
+        AND {% filter(frame_scope_creative_id) %} ad_id {% end %}
+        AND {% filter(frame_scope_report_id) %} report_code {% end %}
+        AND {% filter(frame_scope_campaign_group) %} campaign_group {% end %}
+        AND {% filter(frame_scope_creative_group) %} creative_group {% end %}
+        AND {% filter(frame_scope_creative_group2) %} creative_group2 {% end %}
+    )
+    SELECT DISTINCT ad_length_grouped
+    FROM ad_length_lookup
+  ;;
+
+  models: []
+
+  dimension ad_length_grouped {
+    label: 'Ad Length Grouped'
+    type: 'number'
+    description: 'Ad length grouped using the source Looker bucket rules.'
+    definition: @sql {{ #SOURCE.ad_length_grouped }} ;;
+  }
+
+  measure count {
+    label: 'Count'
+    type: 'number'
+    definition: @aql count(ad_length_clipping_helper_v.ad_length_grouped) ;;
+  }
+}

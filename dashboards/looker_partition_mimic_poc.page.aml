@@ -1,0 +1,101 @@
+Dashboard looker_partition_mimic_poc {
+  title: 'Looker Partition Mimic POC'
+  description: 'Mimics Vertical City Looker Liquid behavior: a campaign parameter creates helper dates, then attention_seconds is filtered by joining to those dates.'
+  owner: 'ganonuevo@verticalcity.com'
+
+  block notes: TextBlock {
+    content: @md
+# Looker partition-mimic POC
+
+This POC intentionally mirrors the existing Looker pattern rather than guaranteeing BigQuery partition pruning.
+
+Flow:
+1. Select a campaign id in the filter.
+2. `flight_date_range_clipping_helper_v` receives that value as a query parameter and expands the campaign's start/end range into distinct dates.
+3. `data_pipeline_attention_seconds` joins to the helper on `DATE(start_at_utc) = dates`.
+4. The result filters attention rows to the selected campaign's active dates without filtering attention rows to that campaign id.
+
+For partition pruning, use a direct predicate on the partition column with explicit date parameters; this POC is for Looker behavior compatibility.
+    ;;
+  }
+
+  block f_campaign_scope: FilterBlock {
+    label: 'Campaign ID used to derive helper dates'
+    type: 'field'
+
+    source: FieldFilterSource {
+      dataset: attention
+      field: r(flight_date_range_clipping_helper_v.frame_scope_campaign_id)
+    }
+
+    settings {
+      input_type: 'single'
+    }
+  }
+
+  block v_average_by_helper_date: VizBlock {
+    label: 'Average attention by derived helper date'
+    viz: ColumnChart {
+      dataset: attention
+      x_axis: VizFieldFull {
+        ref: r(flight_date_range_clipping_helper_v.dates)
+        format {
+          type: 'date'
+        }
+      }
+      y_axis {
+        series {
+          field: VizFieldFull {
+            ref: r(attention.average_attention_seconds)
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+      }
+      settings {
+        row_limit: 5000
+        x_axis_show_null_datetime: false
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+
+  interactions: [
+    FilterInteraction {
+      from: 'f_campaign_scope'
+      to: [
+        CustomMapping {
+          block: 'v_average_by_helper_date'
+          field: r(flight_date_range_clipping_helper_v.frame_scope_campaign_id)
+        }
+      ]
+    }
+  ]
+
+  view: CanvasLayout {
+    label: 'POC'
+    width: 1300
+    height: 788
+    grid_size: 20
+    auto_expand_vertically: true
+    block notes {
+      position: pos(20, 20, 1260, 253)
+    }
+    block f_campaign_scope {
+      position: pos(20, 273, 400, 75)
+    }
+    block v_average_by_helper_date {
+      position: pos(20, 348, 1260, 420)
+    }
+    mobile {
+      mode: 'auto'
+    }
+  }
+
+  theme: H.themes.vanilla
+}

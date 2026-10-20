@@ -1,0 +1,1076 @@
+Dashboard attention_network_scope_validation {
+  title: 'Campaign to Network Scope Validation'
+  description: 'Shows how one campaign selection changes grain in stages before calculating network-level attention metrics.'
+  owner: 'ganonuevo@verticalcity.com'
+
+  block t_intro: TextBlock {
+    content: @md
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 380" width="100%" height="380" role="img" aria-labelledby="vc-nsg-title vc-nsg-desc" style="display: block;">
+  <title id="vc-nsg-title">Campaign to network attention grain and join path</title>
+  <desc id="vc-nsg-desc">A four-stage model path. One campaign joins to many campaign scope bridge rows by campaign ID. Many bridge rows join to one deduplicated network scope by network scope key, removing campaign identity. One network scope then joins to many attention events by network scope key.</desc>
+  <defs>
+    <marker id="vc-nsg-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 z" fill="#94a3b8" />
+    </marker>
+    <style>
+      .vc-nsg-heading { font: 700 18px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #f1f5f9; }
+      .vc-nsg-subheading { font: 12px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #94a3b8; }
+      .vc-nsg-table-name { font: 700 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; fill: #ffffff; }
+      .vc-nsg-grain-label { font: 700 9px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; letter-spacing: .08em; fill: #94a3b8; }
+      .vc-nsg-grain { font: 600 11px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #e2e8f0; }
+      .vc-nsg-field { font: 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; fill: #cbd5e1; }
+      .vc-nsg-key { font: 700 9px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #7dd3fc; }
+      .vc-nsg-relation { stroke: #94a3b8; stroke-width: 2; fill: none; marker-end: url(#vc-nsg-arrow); }
+      .vc-nsg-cardinality { font: 700 11px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #94a3b8; }
+      .vc-nsg-join-key { font: 600 9px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; fill: #94a3b8; }
+      .vc-nsg-boundary { stroke: #f59e0b; stroke-width: 1.5; stroke-dasharray: 4 4; }
+      .vc-nsg-callout-title { font: 700 11px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #fcd34d; }
+      .vc-nsg-callout-copy { font: 11px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #fde68a; }
+      .vc-nsg-footnote { font: 600 11px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #94a3b8; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1178" height="378" rx="14" fill="none" stroke="#475569" />
+  <text id="vc-nsg-visible-title" x="24" y="31" class="vc-nsg-heading">Campaign to network attention</text>
+  <text x="24" y="52" class="vc-nsg-subheading">The selected campaign defines a reusable network scope; attention events are matched without campaign ID.</text>
+
+  <g transform="translate(24 82)">
+    <rect width="230" height="196" rx="9" fill="#262b38" stroke="#93c5fd" />
+    <path d="M9 0 H221 A9 9 0 0 1 230 9 V34 H0 V9 A9 9 0 0 1 9 0" fill="#0284c7" />
+    <text x="12" y="22" class="vc-nsg-table-name">data_pipeline_raw_campaigns</text>
+    <text x="12" y="55" class="vc-nsg-grain-label">GRAIN</text>
+    <text x="12" y="72" class="vc-nsg-grain">one campaign</text>
+    <line x1="0" y1="86" x2="230" y2="86" stroke="#3b4252" />
+    <text x="12" y="108" class="vc-nsg-key">PK</text>
+    <text x="38" y="108" class="vc-nsg-field">campaign_id</text>
+    <text x="12" y="134" class="vc-nsg-field">start_at</text>
+    <text x="12" y="158" class="vc-nsg-field">end_at</text>
+    <text x="12" y="182" class="vc-nsg-field">campaign_name</text>
+  </g>
+
+  <g transform="translate(304 82)">
+    <rect width="250" height="196" rx="9" fill="#262b38" stroke="#c4b5fd" />
+    <path d="M9 0 H241 A9 9 0 0 1 250 9 V34 H0 V9 A9 9 0 0 1 9 0" fill="#7c3aed" />
+    <text x="12" y="22" class="vc-nsg-table-name">campaign_network_scope_bridge</text>
+    <text x="12" y="55" class="vc-nsg-grain-label">GRAIN</text>
+    <text x="12" y="72" class="vc-nsg-grain">campaign × date × property × ad length</text>
+    <line x1="0" y1="86" x2="250" y2="86" stroke="#3b4252" />
+    <text x="12" y="108" class="vc-nsg-key">PK</text>
+    <text x="38" y="108" class="vc-nsg-field">campaign_scope_key</text>
+    <text x="12" y="134" class="vc-nsg-key">FK</text>
+    <text x="38" y="134" class="vc-nsg-field">campaign_id</text>
+    <text x="12" y="160" class="vc-nsg-key">FK</text>
+    <text x="38" y="160" class="vc-nsg-field">network_scope_key</text>
+    <text x="12" y="184" class="vc-nsg-field">city</text>
+  </g>
+
+  <g transform="translate(604 82)">
+    <rect width="240" height="196" rx="9" fill="#262b38" stroke="#5eead4" />
+    <path d="M9 0 H231 A9 9 0 0 1 240 9 V34 H0 V9 A9 9 0 0 1 9 0" fill="#0f766e" />
+    <text x="12" y="22" class="vc-nsg-table-name">network_scope</text>
+    <text x="12" y="55" class="vc-nsg-grain-label">GRAIN</text>
+    <text x="12" y="72" class="vc-nsg-grain">date × property × ad length</text>
+    <line x1="0" y1="86" x2="240" y2="86" stroke="#3b4252" />
+    <text x="12" y="108" class="vc-nsg-key">PK</text>
+    <text x="38" y="108" class="vc-nsg-field">network_scope_key</text>
+    <text x="12" y="134" class="vc-nsg-field">scope_date</text>
+    <text x="12" y="158" class="vc-nsg-field">property_id</text>
+    <text x="12" y="182" class="vc-nsg-field">ad_length_grouped</text>
+  </g>
+
+  <g transform="translate(894 82)">
+    <rect width="262" height="196" rx="9" fill="#262b38" stroke="#86efac" />
+    <path d="M9 0 H253 A9 9 0 0 1 262 9 V34 H0 V9 A9 9 0 0 1 9 0" fill="#16a34a" />
+    <text x="12" y="22" class="vc-nsg-table-name">data_pipeline_attention_seconds_v2</text>
+    <text x="12" y="55" class="vc-nsg-grain-label">GRAIN</text>
+    <text x="12" y="72" class="vc-nsg-grain">one attention event</text>
+    <line x1="0" y1="86" x2="262" y2="86" stroke="#3b4252" />
+    <text x="12" y="108" class="vc-nsg-key">PK</text>
+    <text x="38" y="108" class="vc-nsg-field">uuid</text>
+    <text x="12" y="134" class="vc-nsg-key">FK</text>
+    <text x="38" y="134" class="vc-nsg-field">network_scope_key</text>
+    <text x="12" y="160" class="vc-nsg-field">attention_seconds_true</text>
+    <text x="12" y="184" class="vc-nsg-field">start_date_utc</text>
+  </g>
+
+  <path class="vc-nsg-relation" d="M254 216 H304" />
+  <text x="261" y="207" class="vc-nsg-cardinality">1</text>
+  <text x="289" y="207" class="vc-nsg-cardinality">N</text>
+  <text x="279" y="235" text-anchor="middle" class="vc-nsg-join-key">campaign_id</text>
+
+  <path class="vc-nsg-relation" d="M554 216 H604" />
+  <text x="561" y="207" class="vc-nsg-cardinality">N</text>
+  <text x="589" y="207" class="vc-nsg-cardinality">1</text>
+  <text x="579" y="235" text-anchor="middle" class="vc-nsg-join-key">scope_key</text>
+
+  <path class="vc-nsg-relation" d="M844 216 H894" />
+  <text x="851" y="207" class="vc-nsg-cardinality">1</text>
+  <text x="879" y="207" class="vc-nsg-cardinality">N</text>
+  <text x="869" y="235" text-anchor="middle" class="vc-nsg-join-key">scope_key</text>
+
+  <line x1="579" y1="72" x2="579" y2="296" class="vc-nsg-boundary" />
+  <g transform="translate(364 300)">
+    <rect width="430" height="46" rx="8" fill="#3a2f14" stroke="#fbbf24" />
+    <text x="14" y="19" class="vc-nsg-callout-title">GRAIN CHANGE</text>
+    <text x="14" y="36" class="vc-nsg-callout-copy">Campaign identity is removed; overlapping scope rows are deduplicated.</text>
+  </g>
+  <text x="24" y="365" class="vc-nsg-footnote">Filter once by campaign_id → derive scope → match all attention events at the network grain.</text>
+</svg>
+    ;;
+  }
+
+  block h_campaign: TextBlock {
+    content: @md
+## Stage 1: campaign
+**Grain:** one row per campaign. This is the single field used by the dashboard filter.
+    ;;
+  }
+  block q_campaign: TextBlock {
+    content: @md
+**Equivalent AQL — campaign 10527**
+
+```aql
+explore {
+  dimensions {
+    campaign_id: data_pipeline_raw_campaigns.campaign_id,
+    campaign_name: data_pipeline_raw_campaigns.campaign_name,
+    start_at: data_pipeline_raw_campaigns.start_at,
+    end_at: data_pipeline_raw_campaigns.end_at,
+    report_code: data_pipeline_raw_campaigns.report_code,
+    campaign_type: data_pipeline_raw_campaigns.campaign_type,
+    status: data_pipeline_raw_campaigns.status
+  }
+  filters {
+    data_pipeline_raw_campaigns.campaign_id is 10527
+  }
+}
+```
+    ;;
+  }
+  block v_campaign: VizBlock {
+    label: 'Campaign configuration'
+    viz: DataTable {
+      dataset: attention_network_filtering_test
+      fields: [
+        VizFieldFull {
+          label: 'Campaign ID'
+          ref: r(data_pipeline_raw_campaigns.campaign_id)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+          uname: 'data_pipeline_raw_campaigns_campaign_id'
+        },
+        VizFieldFull {
+          label: 'Campaign Name'
+          ref: r(data_pipeline_raw_campaigns.campaign_name)
+          format {
+            type: 'text'
+          }
+          uname: 'data_pipeline_raw_campaigns_campaign_name'
+        },
+        VizFieldFull {
+          label: 'Start At'
+          ref: r(data_pipeline_raw_campaigns.start_at)
+          format {
+            type: 'date'
+          }
+          uname: 'data_pipeline_raw_campaigns_start_at'
+        },
+        VizFieldFull {
+          label: 'End At'
+          ref: r(data_pipeline_raw_campaigns.end_at)
+          format {
+            type: 'date'
+          }
+          uname: 'data_pipeline_raw_campaigns_end_at'
+        },
+        VizFieldFull {
+          label: 'Report Code'
+          ref: r(data_pipeline_raw_campaigns.report_code)
+          format {
+            type: 'text'
+          }
+          uname: 'data_pipeline_raw_campaigns_report_code'
+        },
+        VizFieldFull {
+          label: 'Campaign Type'
+          ref: r(data_pipeline_raw_campaigns.campaign_type)
+          format {
+            type: 'text'
+          }
+          uname: 'data_pipeline_raw_campaigns_campaign_type'
+        },
+        VizFieldFull {
+          label: 'Status'
+          ref: r(data_pipeline_raw_campaigns.status)
+          format {
+            type: 'text'
+          }
+          uname: 'data_pipeline_raw_campaigns_status'
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 100
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+        column_styles: [
+          ColumnStyle {
+            key: 'data_pipeline_raw_campaigns_campaign_id'
+            width: 127
+          },
+          ColumnStyle {
+            key: 'data_pipeline_raw_campaigns_campaign_name'
+            width: 369
+          },
+          ColumnStyle {
+            key: 'data_pipeline_raw_campaigns_start_at'
+            width: 154
+          },
+          ColumnStyle {
+            key: 'data_pipeline_raw_campaigns_end_at'
+            width: 156
+          },
+          ColumnStyle {
+            key: 'data_pipeline_raw_campaigns_report_code'
+            width: 279
+          },
+          ColumnStyle {
+            key: 'data_pipeline_raw_campaigns_campaign_type'
+            width: 143
+          },
+          ColumnStyle {
+            key: 'data_pipeline_raw_campaigns_status'
+            width: 90
+          }
+        ]
+      }
+    }
+  }
+
+  block h_bridge: TextBlock {
+    content: @md
+## Stage 2: campaign network scope bridge
+**Grain:** one row per campaign × date × property × grouped ad length. This expands the selected campaign into the configurations Gio described.
+    ;;
+  }
+
+  block q_bridge: TextBlock {
+    content: @md
+**Equivalent AQL — campaign 10527**
+
+```aql
+explore {
+  dimensions {
+    campaign_id: campaign_network_scope_bridge.campaign_id,
+    scope_date: campaign_network_scope_bridge.scope_date,
+    city: campaign_network_scope_bridge.city,
+    property_id: campaign_network_scope_bridge.property_id,
+    ad_length_grouped: campaign_network_scope_bridge.ad_length_grouped
+  }
+  filters {
+    data_pipeline_raw_campaigns.campaign_id is 10527
+  }
+}
+```
+    ;;
+  }
+
+  block v_bridge: VizBlock {
+    label: 'Expanded campaign scope'
+    viz: DataTable {
+      dataset: attention_network_filtering_test
+      fields: [
+        VizFieldFull {
+          label: 'Campaign ID'
+          ref: r(campaign_network_scope_bridge.campaign_id)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          label: 'Scope Date'
+          ref: r(campaign_network_scope_bridge.scope_date)
+          format {
+            type: 'date'
+            pattern: 'LLL dd, yyyy'
+          }
+        },
+        VizFieldFull {
+          label: 'City'
+          ref: r(campaign_network_scope_bridge.city)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          label: 'Property ID'
+          ref: r(campaign_network_scope_bridge.property_id)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          label: 'Grouped Ad Length'
+          ref: r(campaign_network_scope_bridge.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 500
+        show_row_number: true
+      }
+    }
+  }
+
+  block h_scope: TextBlock {
+    content: @md
+## Stage 3: conformed network scope
+**Grain:** one row per date × property × grouped ad length. Campaign is removed and overlapping scope rows are deduplicated before attention is joined.
+    ;;
+  }
+
+  block q_scope: TextBlock {
+    content: @md
+**Equivalent AQL — campaign 10527**
+
+```aql
+explore {
+  dimensions {
+    scope_date: network_scope.scope_date,
+    city: network_scope.city,
+    property_id: network_scope.property_id,
+    ad_length_grouped: network_scope.ad_length_grouped
+  }
+  filters {
+    data_pipeline_raw_campaigns.campaign_id is 10527
+  }
+}
+```
+    ;;
+  }
+
+  block v_scope: VizBlock {
+    label: 'Deduplicated network scope'
+    viz: DataTable {
+      dataset: attention_network_filtering_test
+      fields: [
+        VizFieldFull {
+          label: 'Date'
+          ref: r(network_scope.scope_date)
+          format {
+            type: 'date'
+            pattern: 'LLL dd, yyyy'
+          }
+        },
+        VizFieldFull {
+          label: 'City'
+          ref: r(network_scope.city)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          label: 'Property ID'
+          ref: r(network_scope.property_id)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          label: 'Grouped Ad Length'
+          ref: r(network_scope.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 500
+        show_row_number: true
+      }
+    }
+  }
+
+  block h_attention: TextBlock {
+    content: @md
+## Stage 4: campaign average vs. network average
+Both metrics use the same `avg(attention_seconds_true)` calculation and eligibility filters.
+
+- **Campaign average:** keeps events whose campaign ID matches the selected campaign.
+- **Network average:** keeps the campaign-derived scope but removes campaign identity with `of_all(..., keep_filters: true)`.
+
+**Displayed grain:** date × city × grouped ad length.
+    ;;
+  }
+
+  block q_attention: TextBlock {
+    content: @md
+**Equivalent AQL — campaign 10527**
+
+```aql
+explore {
+  dimensions {
+    scope_date: network_scope.scope_date,
+    city: network_scope.city,
+    ad_length_grouped: network_scope.ad_length_grouped
+  }
+  measures {
+    campaign_average: campaign_average_attention_seconds,
+    network_average: average_attention_seconds,
+    network_events: attention_events
+  }
+  filters {
+    data_pipeline_raw_campaigns.campaign_id is 10527
+  }
+}
+```
+    ;;
+  }
+
+  block v_attention: VizBlock {
+    label: 'Matching network attention'
+    viz: DataTable {
+      dataset: attention_network_filtering_test
+      fields: [
+        VizFieldFull {
+          label: 'Date'
+          ref: r(network_scope.scope_date)
+          format {
+            type: 'date'
+            pattern: 'LLL dd, yyyy'
+          }
+        },
+        VizFieldFull {
+          label: 'City'
+          ref: r(network_scope.city)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          label: 'Grouped Ad Length'
+          ref: r(network_scope.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          label: 'Campaign Average Attention Seconds'
+          ref: r(attention_network_filtering_test.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          label: 'Network Average Attention Seconds'
+          ref: r(attention_network_filtering_test.average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          label: 'Network Attention Events'
+          ref: r(attention_network_filtering_test.attention_events)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 500
+        show_row_number: true
+      }
+    }
+  }
+  block t_use_case: TextBlock {
+    content: @md
+# Campaign vs. network attention
+Select a campaign to compare its average attention with all eligible network events matching that campaign's date, city, and grouped ad-length scope. Both values reuse the same base average; only the query context changes.
+    ;;
+  }
+  block f_use_case_campaign_id: FilterBlock {
+    label: 'Campaign ID'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention_network_filtering_test
+      field: r(data_pipeline_raw_campaigns.campaign_id)
+    }
+    default {
+      operator: 'is'
+      value: '10527'
+    }
+  }
+  block v_use_case_campaign_average: VizBlock {
+    label: 'Campaign Average Attention Seconds'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention_network_filtering_test
+      value: VizFieldFull {
+        ref: r(attention_network_filtering_test.campaign_average_attention_seconds)
+        label: 'Campaign Average Attention Seconds'
+        format {
+          type: 'number'
+          pattern: '#,###0.00'
+        }
+      }
+      settings {
+        display_mode: 'single'
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+
+  block v_use_case_network_average: VizBlock {
+    label: 'Network Average Attention Seconds'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention_network_filtering_test
+      value: VizFieldFull {
+        ref: r(attention_network_filtering_test.average_attention_seconds)
+        label: 'Network Average Attention Seconds'
+        format {
+          type: 'number'
+          pattern: '#,###0.00'
+        }
+      }
+      settings {
+        display_mode: 'single'
+      }
+    }
+  }
+
+  block v_use_case_network_events: VizBlock {
+    label: 'Network Attention Events'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention_network_filtering_test
+      value: VizFieldFull {
+        ref: r(attention_network_filtering_test.attention_events)
+        label: 'Network Attention Events'
+        format {
+          type: 'number'
+          pattern: '#,###0'
+        }
+      }
+      settings {
+        display_mode: 'single'
+      }
+    }
+  }
+
+  block h_use_case_trend: TextBlock {
+    content: @md
+## How does the campaign compare over time?
+The campaign line appears only on dates with eligible campaign events. The network line includes every eligible event in the campaign-derived scope.
+    ;;
+  }
+  block v_use_case_trend: VizBlock {
+    label: 'Campaign and Network Attention Over Time'
+    viz: CombinationChart {
+      dataset: attention_network_filtering_test
+      x_axis: VizFieldFull {
+        label: 'Date'
+        ref: r(network_scope.scope_date)
+        format {
+          type: 'date'
+          pattern: 'LLL dd, yyyy'
+        }
+      }
+      y_axis {
+        label: 'Attention Seconds'
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            label: 'Campaign Average'
+            ref: r(attention_network_filtering_test.campaign_average_attention_seconds)
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+          settings {
+            line_interpolation: 'smooth'
+          }
+        }
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            label: 'Network Average'
+            ref: r(attention_network_filtering_test.average_attention_seconds)
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+          settings {
+            line_interpolation: 'smooth'
+          }
+        }
+      }
+      settings {
+        show_data_points: true
+        sort {
+          field_index: 0
+          direction: 'asc'
+          type: 'xaxis'
+        }
+        x_axis_label: 'Date'
+        x_axis_show_null_datetime: true
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+
+  block h_use_case_breakdown: TextBlock {
+    content: @md
+## Where does the difference come from?
+Compare the same 2 averages by city and grouped ad length. These dimensions change the level of detail without creating another derived view.
+    ;;
+  }
+
+  block v_use_case_city: VizBlock {
+    label: 'Campaign and Network Attention by City'
+    viz: CombinationChart {
+      dataset: attention_network_filtering_test
+      x_axis: VizFieldFull {
+        ref: r(network_scope.city)
+        label: 'City'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        label: 'Attention Seconds'
+        series {
+          mark_type: 'column'
+          field: VizFieldFull {
+            ref: r(attention_network_filtering_test.campaign_average_attention_seconds)
+            label: 'Campaign Average'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+        series {
+          mark_type: 'column'
+          field: VizFieldFull {
+            ref: r(attention_network_filtering_test.average_attention_seconds)
+            label: 'Network Average'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+      }
+      settings {
+        sort: LineFamilySort {
+          type: 'yaxis'
+          field_index: 1
+          direction: 'desc'
+        }
+      }
+    }
+  }
+
+  block v_use_case_ad_length: VizBlock {
+    label: 'Campaign and Network Attention by Ad Length'
+    viz: CombinationChart {
+      dataset: attention_network_filtering_test
+      x_axis: VizFieldFull {
+        ref: r(network_scope.ad_length_grouped)
+        label: 'Grouped Ad Length'
+        format {
+          type: 'number'
+          pattern: '#,###0.00'
+        }
+      }
+      y_axis {
+        label: 'Attention Seconds'
+        series {
+          mark_type: 'column'
+          field: VizFieldFull {
+            ref: r(attention_network_filtering_test.campaign_average_attention_seconds)
+            label: 'Campaign Average'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+        series {
+          mark_type: 'column'
+          field: VizFieldFull {
+            ref: r(attention_network_filtering_test.average_attention_seconds)
+            label: 'Network Average'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+      }
+      settings {
+        legend_label: 'bottom'
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+  block f_campaigns_campaign_id: FilterBlock {
+    label: 'Campaigns Campaign ID'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention_network_filtering_test
+      field: r(data_pipeline_raw_campaigns.campaign_id)
+    }
+    default {
+      operator: 'is'
+      value: '10527'
+    }
+  }
+  block v_ah6r: VizBlock {
+    label: 'Base Average Attention Seconds'
+    viz: MetricKpi {
+      dataset: attention_network_filtering_test
+      value: VizFieldFull {
+        ref: r(attention_network_filtering_test.base_average_attention_seconds)
+        format {
+          type: 'number'
+          pattern: 'inherited'
+        }
+      }
+      settings {
+        display_mode: 'single'
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+    settings {
+      hide_label: true
+    }
+  }
+  block v_fszk: VizBlock {
+    label: 'Campaign Average Attention Seconds copy'
+    viz: MetricKpi {
+      dataset: attention_network_filtering_test
+      value: VizFieldFull {
+        ref: r(attention_network_filtering_test.campaign_average_attention_seconds)
+        format {
+          type: 'number'
+          pattern: 'inherited'
+        }
+      }
+      settings {
+        display_mode: 'single'
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+    settings {
+      hide_label: true
+    }
+  }
+
+  view: TabLayout {
+    tab walkthrough: CanvasLayout {
+      label: 'Grain Walkthrough'
+      width: 1220
+      height: 2600
+      grid_size: 20
+      auto_expand_vertically: true
+      block t_intro {
+        position: pos(20, 20, 1180, 420)
+        layer: 1
+      }
+      block h_campaign {
+        position: pos(20, 520, 1180, 100)
+        layer: 1
+      }
+      block q_campaign {
+        position: pos(20, 640, 580, 320)
+        layer: 1
+      }
+      block v_campaign {
+        position: pos(620, 640, 580, 320)
+        layer: 1
+      }
+      block h_bridge {
+        position: pos(20, 980, 1180, 100)
+        layer: 1
+      }
+      block q_bridge {
+        position: pos(20, 1100, 580, 360)
+        layer: 1
+      }
+      block v_bridge {
+        position: pos(620, 1100, 580, 360)
+        layer: 1
+      }
+      block h_scope {
+        position: pos(20, 1480, 1180, 100)
+        layer: 1
+      }
+      block q_scope {
+        position: pos(20, 1600, 580, 360)
+        layer: 1
+      }
+      block v_scope {
+        position: pos(620, 1600, 580, 360)
+        layer: 1
+      }
+      block h_attention {
+        position: pos(20, 1980, 1180, 160)
+        layer: 1
+      }
+      block q_attention {
+        position: pos(20, 2160, 580, 420)
+        layer: 1
+      }
+      block v_attention {
+        position: pos(620, 2160, 580, 420)
+        layer: 1
+      }
+      block f_campaigns_campaign_id {
+        position: pos(20, 440, 300, 80)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+    tab use_case: CanvasLayout {
+      label: 'Use Case'
+      width: 1220
+      height: 1660
+      grid_size: 20
+      auto_expand_vertically: true
+      block t_use_case {
+        position: pos(20, 20, 1180, 140)
+        layer: 1
+      }
+      block f_use_case_campaign_id {
+        position: pos(20, 180, 380, 100)
+        layer: 1
+      }
+      block v_use_case_campaign_average {
+        position: pos(20, 460, 380, 140)
+        layer: 1
+      }
+      block v_use_case_network_average {
+        position: pos(420, 460, 380, 140)
+        layer: 1
+      }
+      block v_use_case_network_events {
+        position: pos(820, 460, 380, 140)
+        layer: 1
+      }
+      block h_use_case_trend {
+        position: pos(20, 620, 1180, 100)
+        layer: 1
+      }
+      block v_use_case_trend {
+        position: pos(20, 740, 1180, 360)
+        layer: 1
+      }
+      block h_use_case_breakdown {
+        position: pos(20, 1120, 1180, 100)
+        layer: 1
+      }
+      block v_use_case_city {
+        position: pos(20, 1240, 580, 400)
+        layer: 1
+      }
+      block v_use_case_ad_length {
+        position: pos(620, 1240, 580, 400)
+        layer: 1
+      }
+      block v_ah6r {
+        position: pos(20, 300, 380, 140)
+        layer: 2
+      }
+      block v_fszk {
+        position: pos(420, 300, 380, 140)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+  }
+  theme: DynamicPageTheme {
+    light: vc_dark_theme
+    dark: vc_dark_theme
+  }
+  settings {
+    timezone: 'Etc/UTC'
+    cache_duration: 1440
+    autorun_on_open: true
+    autorun_on_changes: true
+  }
+  explicit_interactions: [
+    FilterInteraction {
+      from: 'f_campaigns_campaign_id'
+      to: [
+        'v_campaign',
+        'v_bridge',
+        'v_scope',
+        'v_attention'
+      ]
+      field: r(data_pipeline_raw_campaigns.campaign_id)
+    },
+    FilterInteraction {
+      from: 'f_use_case_campaign_id'
+      to: [
+        'v_use_case_campaign_average',
+        'v_use_case_network_average',
+        'v_use_case_network_events',
+        'v_use_case_trend',
+        'v_use_case_city',
+        'v_use_case_ad_length',
+        'v_fszk',
+        'v_ah6r'
+      ]
+      field: r(data_pipeline_raw_campaigns.campaign_id)
+    },
+    FilterInteraction {
+      from: 'v_campaign'
+      to: [
+        'v_bridge',
+        'v_scope',
+        'v_attention'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_bridge'
+      to: [
+        'v_campaign',
+        'v_scope',
+        'v_attention'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_scope'
+      to: [
+        'v_campaign',
+        'v_bridge',
+        'v_attention'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_attention'
+      to: [
+        'v_campaign',
+        'v_bridge',
+        'v_scope'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_use_case_trend'
+      to: [
+        'v_use_case_campaign_average',
+        'v_use_case_network_average',
+        'v_use_case_network_events',
+        'v_use_case_city',
+        'v_use_case_ad_length',
+        'v_ah6r',
+        'v_fszk'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_use_case_city'
+      to: [
+        'v_use_case_campaign_average',
+        'v_use_case_network_average',
+        'v_use_case_network_events',
+        'v_use_case_trend',
+        'v_use_case_ad_length',
+        'v_ah6r',
+        'v_fszk'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_use_case_ad_length'
+      to: [
+        'v_use_case_campaign_average',
+        'v_use_case_network_average',
+        'v_use_case_network_events',
+        'v_use_case_trend',
+        'v_use_case_city',
+        'v_ah6r',
+        'v_fszk'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_use_case_campaign_average'
+      to: [
+        'v_ah6r',
+        'v_fszk'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_ah6r'
+      to: [
+        'v_use_case_campaign_average',
+        'v_use_case_network_average',
+        'v_use_case_network_events',
+        'v_use_case_trend',
+        'v_use_case_city',
+        'v_use_case_ad_length',
+        'v_fszk'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_use_case_network_average'
+      to: [
+        'v_ah6r'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_use_case_network_events'
+      to: [
+        'v_ah6r'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_fszk'
+      to: [
+        'v_ah6r',
+        'v_use_case_campaign_average'
+      ]
+    }
+  ]
+}

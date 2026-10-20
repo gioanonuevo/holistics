@@ -1,0 +1,35 @@
+Model data_pipeline_creative_city_mapping_table {
+  type: 'table'
+  label: 'Creative City Mapping'
+  description: 'Raw campaign/ad to city mapping table, replacing the parameterized creative city helper query model.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension city {
+    label: 'City'
+    type: 'text'
+    definition: @sql {{ #SOURCE.city }};;
+  }
+
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+
+  dimension campaign_ad_key {
+    label: 'Campaign Ad Key'
+    type: 'text'
+    hidden: true
+    description: 'Composite campaign/ad key for relationship modeling.'
+    definition: @sql CONCAT({{ campaign_id }}, '::', {{ ad_id }}) ;;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`creative_city_mapping`'
+}

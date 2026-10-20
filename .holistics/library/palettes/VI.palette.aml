@@ -1,0 +1,16 @@
+ColorPalette vi {
+  title: 'VI'
+  categorical {
+    colors: [
+   "#6E4FC6",
+   "#0ECCC2",
+   "#133256",
+   "#FFD966",
+   "#E06666", 
+   "#ACAEB1",
+   "#97C7E2",
+   "#F04D28",
+   "#E2F9F7"
+    ]
+  }
+}

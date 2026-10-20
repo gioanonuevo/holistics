@@ -1,0 +1,339 @@
+Model attention_base {
+  type: 'query'
+  label: 'Attention Base'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+
+  // Same semantics as filter_model.report_filter: a campaign id (Direct) or an ad id (Programmatic).
+  // Bind the dashboard campaign control to this param; the viz condition
+  //   filter_model.report_filter == (attention_base.report_filter | first())
+  // carries the same value into the network scope chain. The flight window of the matching
+  // campaign rows is expanded to one row per date and inner-joined on DATE(start_at_utc) directly
+  // on the partitioned base table (Looker-style). NOTE: BigQuery only prunes partitions for this
+  // join shape on tables above an undocumented size (attention_seconds_v2 yes, the smaller v3 no).
+  param report_filter {
+    label: 'Report Filter (campaign id or ad id)'
+    type: 'text'
+  }
+
+  dimension uuid {
+    label: 'Uuid'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.uuid }};;
+  }
+  dimension start_at_utc {
+    label: 'Start At Utc'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at_utc }};;
+  }
+  dimension device_id {
+    label: 'Device Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.device_id }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension attention_seconds {
+    label: 'Attention Seconds'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.attention_seconds }};;
+  }
+  dimension ad_length {
+    label: 'Ad Length'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_length }};;
+  }
+  dimension play_id {
+    label: 'Play Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.play_id }};;
+  }
+  dimension gender {
+    label: 'Gender'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.gender }};;
+  }
+  dimension gender_pie {
+    label: 'Gender Pie'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.gender_pie }};;
+  }
+  dimension age_group {
+    label: 'Age Group'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.age_group }};;
+  }
+  dimension generation {
+    label: 'Generation'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.generation }};;
+  }
+  dimension exposure_category {
+    label: 'Exposure Category'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.exposure_category }};;
+  }
+  dimension start_date_utc {
+    label: 'Start Date Utc'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_date_utc }};;
+  }
+  dimension start_at_local {
+    label: 'Start At Local'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at_local }};;
+  }
+  dimension start_date_local {
+    label: 'Start Date Local'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_date_local }};;
+  }
+  dimension ad_length_grouped {
+    label: 'Ad Length Grouped'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_length_grouped }};;
+  }
+  dimension atleast_1_sec {
+    label: 'Atleast 1 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.atleast_1_sec }};;
+  }
+  dimension atleast_1_5_sec {
+    label: 'Atleast 1 5 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.atleast_1_5_sec }};;
+  }
+  dimension atleast_2_sec {
+    label: 'Atleast 2 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.atleast_2_sec }};;
+  }
+  dimension ads_type {
+    label: 'Ads Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ads_type }};;
+  }
+
+  dimension city {
+    label: 'City'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.city }};;
+  }
+
+  dimension network_scope_key {
+    label: 'Network Scope Key'
+    type: 'text'
+    hidden: true
+    definition: @sql
+      concat(
+        cast({{ city }} as string)
+        , '||'
+        , cast({{ ad_length_grouped }} as string)
+      )
+    ;;
+  }
+
+  dimension is_in_flight_range {
+    label: 'Is in flight range'
+    type: 'truefalse'
+    hidden: false
+    description: 'True when the event UTC date is inside the flight window of the report_filter selection (campaign id or ad id). The window is applied as an inner join on DATE(start_at_utc) in the model SQL, so rows outside it are already excluded.'
+    definition: @sql {{ #SOURCE.is_in_flight_range }};;
+  }
+
+  dimension selected_flight_start_date {
+    label: 'Selected Flight Start Date'
+    type: 'date'
+    hidden: true
+    definition: @sql {{ #SOURCE.selected_flight_start_date }};;
+  }
+
+  dimension selected_flight_end_date {
+    label: 'Selected Flight End Date'
+    type: 'date'
+    hidden: true
+    definition: @sql {{ #SOURCE.selected_flight_end_date }};;
+  }
+
+  
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    SELECT
+          uuid,
+          start_at_utc,
+          device_id,
+          property_id,
+          campaign_id,
+          attention.ad_id,
+          attention_seconds_true as attention_seconds,
+          ad_length,
+          play_id,
+          gender,
+          gender_pie,
+          age_group,
+          generation,
+          case
+          when attention_seconds_true >= 2.5 then 'Message Exposure'
+          when attention_seconds_true < 2.5 then 'Brand Exposure'
+          else ''
+          end as exposure_category,
+          DATE(attention.start_at_utc) as start_date_utc,
+          CASE
+        -- Atlantic Time (Includes DST)
+        WHEN region_short IN ('NS', 'NB', 'PE', 'Nova Scotia', 'New Brunswick', 'Prince Edward Island')
+            THEN DATETIME(attention.start_at_utc, 'America/Halifax')
+        -- Newfoundland Time (Handles the unique 30-min offset + DST)
+        WHEN region_short IN ('NL', 'Newfoundland and Labrador')
+            THEN DATETIME(attention.start_at_utc, 'America/St_Johns')
+        -- Eastern Time (Toronto/Montreal)
+        WHEN region_short IN ('ON', 'QC', 'Ontario', 'Quebec')
+            THEN DATETIME(attention.start_at_utc, 'America/Toronto')
+        -- Central Time (Winnipeg)
+        WHEN region_short IN ('MB', 'Manitoba')
+            THEN DATETIME(attention.start_at_utc, 'America/Winnipeg')
+        -- Saskatchewan (Correctly stays on CST year-round)
+        WHEN region_short IN ('SK', 'Saskatchewan')
+            THEN DATETIME(attention.start_at_utc, 'America/Regina')
+        -- Mountain Time (Edmonton/Calgary)
+        WHEN region_short IN ('AB', 'NT', 'Alberta', 'Northwest Territories')
+            THEN DATETIME(attention.start_at_utc, 'America/Edmonton')
+        -- Pacific Time (Vancouver)
+        WHEN region_short IN ('BC', 'YT', 'British Columbia', 'Yukon')
+            THEN DATETIME(attention.start_at_utc, 'America/Vancouver')
+        ELSE DATETIME(attention.start_at_utc, 'UTC')
+          END as start_at_local,
+          CASE
+        -- Atlantic Time (Includes DST)
+        WHEN region_short IN ('NS', 'NB', 'PE', 'Nova Scotia', 'New Brunswick', 'Prince Edward Island')
+            THEN DATE(attention.start_at_utc, 'America/Halifax')
+        -- Newfoundland Time (Handles the unique 30-min offset + DST)
+        WHEN region_short IN ('NL', 'Newfoundland and Labrador')
+            THEN DATE(attention.start_at_utc, 'America/St_Johns')
+        -- Eastern Time (Toronto/Montreal)
+        WHEN region_short IN ('ON', 'QC', 'Ontario', 'Quebec')
+            THEN DATE(attention.start_at_utc, 'America/Toronto')
+        -- Central Time (Winnipeg)
+        WHEN region_short IN ('MB', 'Manitoba')
+            THEN DATE(attention.start_at_utc, 'America/Winnipeg')
+        -- Saskatchewan (Correctly stays on CST year-round)
+        WHEN region_short IN ('SK', 'Saskatchewan')
+            THEN DATE(attention.start_at_utc, 'America/Regina')
+        -- Mountain Time (Edmonton/Calgary)
+        WHEN region_short IN ('AB', 'NT', 'Alberta', 'Northwest Territories')
+            THEN DATE(attention.start_at_utc, 'America/Edmonton')
+        -- Pacific Time (Vancouver)
+        WHEN region_short IN ('BC', 'YT', 'British Columbia', 'Yukon')
+            THEN DATE(attention.start_at_utc, 'America/Vancouver')
+        ELSE DATE(attention.start_at_utc, 'UTC')
+          END as start_date_local,
+          --attention.ad_length as ad_length,
+          case
+          when ad_length between 5 and 7 then 5
+          when ad_length between 8 and 12 then 10
+          when ad_length between 13 and 16 then 15
+          when ad_length between 17 and 22 then 20
+          when ad_length between 28 and 32 then 30
+          else ad_length
+          end as ad_length_grouped,
+          case
+          when attention_seconds_true >= 1 then '>=1'
+          when attention_seconds_true < 1 then '<1'
+          else ''
+          end as atleast_1_sec,
+          case
+          when attention_seconds_true >= 1.5 then '>=1.5'
+          when attention_seconds_true < 1.5 then '<1.5'
+          else ''
+          end as atleast_1_5_sec,
+          case
+          when attention_seconds_true >= 2 then '>=2'
+          when attention_seconds_true < 2 then '<2'
+          else ''
+          end as atleast_2_sec,
+          ads_type,
+          city,
+          flight_dates.dates IS NOT NULL as is_in_flight_range,
+          flight_dates.minimum_flight_date as selected_flight_start_date,
+          flight_dates.maximum_flight_date as selected_flight_end_date,
+          FROM
+          `tech-data-warehouse.data_pipeline.attention_seconds_v3` attention
+          -- Flight date clipping applied directly on the partitioned scan. The report_filter
+          -- param matches the same rows as filter_model.report_filter (campaign id for Direct,
+          -- ad id for Programmatic); their min/max flight window is expanded to one row per date.
+          INNER JOIN (
+            SELECT
+              dates,
+              minimum_flight_date,
+              maximum_flight_date
+            FROM (
+              SELECT
+                MIN(DATE(start_at)) AS minimum_flight_date,
+                MAX(DATE(end_at)) AS maximum_flight_date
+              FROM (
+                select campaign_id as report_filter, campaign_id, ad_id, start_at, end_at
+                from `data_pipeline.stg_campaigns` where campaign_id is not null
+                union all
+                select ad_id as report_filter, campaign_id, ad_id, start_at, end_at
+                from `data_pipeline.stg_campaigns` where ad_id is not null
+              ) AS report_options
+              WHERE {% filter(report_filter) %} report_filter {% end %}
+            ) AS flight_date_bounds,
+              UNNEST(GENERATE_DATE_ARRAY(minimum_flight_date, maximum_flight_date)) AS dates
+          ) AS flight_dates
+          ON DATE(attention.start_at_utc) = flight_dates.dates
+          -- attention.property_id is the property NUMBER, not properties.id (Looker: property_number as id).
+          -- Same property filters as the Looker views: Canadian, non-test, not deleted.
+          LEFT JOIN (
+            select * from `data_pipeline.properties`
+            where country = 'Canada' and test = false and is_deleted = false
+          ) properties
+          ON attention.property_id = properties.property_number
+          LEFT JOIN (
+          select
+          distinct
+          ad_id,
+          content_type as ads_type from `data_pipeline.stg_campaigns`
+          where content_type is not null
+          ) content_type
+          ON attention.ad_id = content_type.ad_id
+          WHERE attention.ad_id IS NOT NULL and attention_seconds_true is NOT NULL and age_group not in ('18 below','no info');;
+  models: [
+  ]
+}

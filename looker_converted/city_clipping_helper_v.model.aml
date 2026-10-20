@@ -1,0 +1,221 @@
+//////////////////////////////////////////////////////////
+// This file is auto-generated from the below Looker file
+// File: looker/vision+/city_clipping_helper_v.view.lkml
+//////////////////////////////////////////////////////////
+
+Model city_clipping_helper_v {
+  type: 'query'
+  data_source_name: 'vc_data_warehouse'
+
+  // Filters corresponding to the active Looker Liquid conditions in the source view.
+  param frame_scope_campaign_id {
+    label: 'Frame Scope Campaign ID'
+    type: 'text'
+  }
+
+  param frame_scope_creative_id {
+    label: 'Frame Scope Creative ID'
+    type: 'text'
+  }
+
+  param frame_scope_report_id {
+    label: 'Frame Scope Report ID'
+    type: 'text'
+  }
+
+  query: @sql
+    WITH detection_demography AS (
+      SELECT *
+      FROM `tech-data-warehouse.data_pipeline.detection_demography`
+      WHERE age_group NOT IN ('18 below', 'no info')
+    ),
+    attention_seconds AS (
+      SELECT
+        attention.*,
+        demo.gender,
+        demo.gender_pie,
+        demo.age_group,
+        demo.generation,
+        demo.gender_v2,
+        CASE
+          WHEN attention.attention_seconds_true >= 2.5 THEN 'Message Exposure'
+          WHEN attention.attention_seconds_true < 2.5 THEN 'Brand Exposure'
+          ELSE ''
+        END AS exposure_category,
+        campaigns.report_code,
+        CASE
+          WHEN properties.address_province IN ('NS', 'NB', 'PE', 'Nova Scotia', 'New Brunswick', 'Prince Edward Island') THEN DATETIME(attention.start_at_utc, 'America/Halifax')
+          WHEN properties.address_province IN ('NL', 'Newfoundland and Labrador') THEN DATETIME(attention.start_at_utc, 'America/St_Johns')
+          WHEN properties.address_province IN ('ON', 'QC', 'Ontario', 'Quebec') THEN DATETIME(attention.start_at_utc, 'America/Toronto')
+          WHEN properties.address_province IN ('MB', 'Manitoba') THEN DATETIME(attention.start_at_utc, 'America/Winnipeg')
+          WHEN properties.address_province IN ('SK', 'Saskatchewan') THEN DATETIME(attention.start_at_utc, 'America/Regina')
+          WHEN properties.address_province IN ('AB', 'NT', 'Alberta', 'Northwest Territories') THEN DATETIME(attention.start_at_utc, 'America/Edmonton')
+          WHEN properties.address_province IN ('BC', 'YT', 'British Columbia', 'Yukon') THEN DATETIME(attention.start_at_utc, 'America/Vancouver')
+          ELSE DATETIME(attention.start_at_utc, 'UTC')
+        END AS start_at_local,
+        attention.ad_length AS ad_length,
+        CASE
+          WHEN attention.ad_length BETWEEN 5 AND 7 THEN 5
+          WHEN attention.ad_length BETWEEN 8 AND 12 THEN 10
+          WHEN attention.ad_length BETWEEN 13 AND 16 THEN 15
+          WHEN attention.ad_length BETWEEN 17 AND 22 THEN 20
+          WHEN attention.ad_length BETWEEN 28 AND 32 THEN 30
+          ELSE attention.ad_length
+        END AS ad_length_grouped,
+        CASE
+          WHEN attention.attention_seconds_true >= 1 THEN '>=1'
+          WHEN attention.attention_seconds_true < 1 THEN '<1'
+          ELSE ''
+        END AS atleast_1_sec,
+        CASE
+          WHEN attention.attention_seconds_true >= 1.5 THEN '>=1.5'
+          WHEN attention.attention_seconds_true < 1.5 THEN '<1.5'
+          ELSE ''
+        END AS atleast_1_5_sec,
+        CASE
+          WHEN attention.attention_seconds_true >= 2 THEN '>=2'
+          WHEN attention.attention_seconds_true < 2 THEN '<2'
+          ELSE ''
+        END AS atleast_2_sec,
+        content_type.ads_type
+      FROM `tech-data-warehouse.data_pipeline.attention_seconds` AS attention
+      INNER JOIN detection_demography AS demo
+        ON attention.uuid = demo.uuid
+      LEFT JOIN `tech-data-warehouse.data_pipeline.raw_campaigns` AS campaigns
+        ON attention.campaign_id = CAST(campaigns.id AS STRING)
+      LEFT JOIN (
+        SELECT
+          property_source.property_number AS id,
+          property_source.name,
+          CASE
+            WHEN property_source.region = 'Alberta' THEN 'AB'
+            WHEN property_source.region = 'British Columbia' THEN 'BC'
+            WHEN property_source.region = 'Newfoundland and Labrador' THEN 'NL'
+            WHEN property_source.region = 'Ontario' THEN 'ON'
+            WHEN property_source.region = 'Québec' THEN 'QC'
+            WHEN property_source.region = 'Manitoba' THEN 'MB'
+            WHEN property_source.region = 'Saskatchewan' THEN 'SK'
+            WHEN property_source.region = 'Nova Scotia' THEN 'NS'
+            WHEN property_source.region = 'Northwest Territories' THEN 'NT'
+            WHEN property_source.region = 'Yukon' THEN 'YT'
+            ELSE property_source.region
+          END AS address_province,
+          CASE
+            WHEN property_source.city = 'Calgary' THEN 'CGY'
+            WHEN property_source.city = 'Edmonton' THEN 'EDM'
+            WHEN property_source.region = 'British Columbia' THEN 'BC'
+            WHEN property_source.region = 'Newfoundland and Labrador' THEN 'NL'
+            WHEN property_source.region = 'Ontario' THEN 'ON'
+            WHEN property_source.region = 'Québec' THEN 'QC'
+            WHEN property_source.region = 'Manitoba' THEN 'MB'
+            WHEN property_source.region = 'Saskatchewan' THEN 'SK'
+            WHEN property_source.region = 'Nova Scotia' THEN 'NS'
+            WHEN property_source.region = 'Northwest Territories' THEN 'NT'
+            WHEN property_source.region = 'Yukon' THEN 'YT'
+            ELSE property_source.region
+          END AS address_province2,
+          property_source.city AS address_city,
+          property_source.string_field_1 AS property_type,
+          property_source.no_of_floors AS floors,
+          property_source.country AS address_country,
+          SUBSTR(property_source.postal_code, 0, 3) AS FSA,
+          property_source.latitude,
+          property_source.longitude
+        FROM `data_pipeline.views_properties_query_results` AS property_source
+        LEFT JOIN `uploads.iab_lookup_canada` AS iab
+          ON property_source.string_field_0 = iab.property_type
+        WHERE property_source.country = 'Canada'
+          AND property_source.test = FALSE
+          AND property_source.is_deleted = FALSE
+          AND property_source.status_text = 'ready'
+      ) AS properties
+        ON attention.property_id = properties.id
+      LEFT JOIN (
+        SELECT DISTINCT ad_id, content_type AS ads_type
+        FROM `data_pipeline.stg_campaigns`
+        WHERE content_type IS NOT NULL
+      ) AS content_type
+        ON attention.ad_id = content_type.ad_id
+      WHERE attention.ad_id IS NOT NULL
+        AND attention.attention_seconds_true IS NOT NULL
+        AND {% filter(frame_scope_campaign_id) %} attention.campaign_id {% end %}
+        AND {% filter(frame_scope_creative_id) %} attention.ad_id {% end %}
+        AND {% filter(frame_scope_report_id) %} campaigns.report_code {% end %}
+    ),
+    screens_info AS (
+      SELECT
+        screen.*,
+        1 AS screen_installation_config_id,
+        1 AS index
+      FROM `tech-data-warehouse.data_pipeline.screen_mac_address_lookup_v2` AS screen
+    )
+    SELECT DISTINCT properties.address_city AS properties_city
+    FROM attention_seconds
+    INNER JOIN screens_info
+      ON attention_seconds.device_id = screens_info.mac_address
+    INNER JOIN (
+      SELECT
+        property_source.property_number AS id,
+        property_source.name,
+        CASE
+          WHEN property_source.region = 'Alberta' THEN 'AB'
+          WHEN property_source.region = 'British Columbia' THEN 'BC'
+          WHEN property_source.region = 'Newfoundland and Labrador' THEN 'NL'
+          WHEN property_source.region = 'Ontario' THEN 'ON'
+          WHEN property_source.region = 'Québec' THEN 'QC'
+          WHEN property_source.region = 'Manitoba' THEN 'MB'
+          WHEN property_source.region = 'Saskatchewan' THEN 'SK'
+          WHEN property_source.region = 'Nova Scotia' THEN 'NS'
+          WHEN property_source.region = 'Northwest Territories' THEN 'NT'
+          WHEN property_source.region = 'Yukon' THEN 'YT'
+          ELSE property_source.region
+        END AS address_province,
+        CASE
+          WHEN property_source.city = 'Calgary' THEN 'CGY'
+          WHEN property_source.city = 'Edmonton' THEN 'EDM'
+          WHEN property_source.region = 'British Columbia' THEN 'BC'
+          WHEN property_source.region = 'Newfoundland and Labrador' THEN 'NL'
+          WHEN property_source.region = 'Ontario' THEN 'ON'
+          WHEN property_source.region = 'Québec' THEN 'QC'
+          WHEN property_source.region = 'Manitoba' THEN 'MB'
+          WHEN property_source.region = 'Saskatchewan' THEN 'SK'
+          WHEN property_source.region = 'Nova Scotia' THEN 'NS'
+          WHEN property_source.region = 'Northwest Territories' THEN 'NT'
+          WHEN property_source.region = 'Yukon' THEN 'YT'
+          ELSE property_source.region
+        END AS address_province2,
+        property_source.city AS address_city,
+        property_source.string_field_1 AS property_type,
+        property_source.no_of_floors AS floors,
+        property_source.country AS address_country,
+        SUBSTR(property_source.postal_code, 0, 3) AS FSA,
+        property_source.latitude,
+        property_source.longitude
+      FROM `data_pipeline.views_properties_query_results` AS property_source
+      LEFT JOIN `data_pipeline.iab_lookup_canada` AS iab
+        ON property_source.string_field_0 = iab.property_type
+      WHERE property_source.country = 'Canada'
+        AND property_source.test = FALSE
+        AND property_source.is_deleted = FALSE
+        AND property_source.status_text = 'ready'
+    ) AS properties
+      ON screens_info.property_id = properties.id
+    GROUP BY 1
+    ORDER BY 1
+    LIMIT 500
+  ;;
+
+  models: []
+
+  dimension properties_city {
+    label: 'Properties City'
+    type: 'text'
+    definition: @sql {{ #SOURCE.properties_city }} ;;
+  }
+
+  measure count {
+    label: 'Count'
+    type: 'number'
+    definition: @aql count(city_clipping_helper_v.properties_city) ;;
+  }
+}

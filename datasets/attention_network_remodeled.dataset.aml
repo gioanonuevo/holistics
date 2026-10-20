@@ -1,0 +1,50 @@
+Dataset attention_network_remodeled {
+  label: 'Attention Network Remodeled'
+  description: 'Table-model-based replacement for the parameterized helper-query dataset. Campaign scope, creative groups, city mapping, demographics, properties, and attention facts are modeled as separate tables and joined by dataset relationships.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  models: [
+    data_pipeline_attention_seconds_v2,
+    data_pipeline_stg_campaigns,
+    data_pipeline_stg_client_dashboard_campaign_groups_lu,
+    data_pipeline_stg_client_dashboard_creative_groups_lu,
+    data_pipeline_creative_city_mapping_table,
+    data_pipeline_detection_demography,
+    data_pipeline_properties
+  ]
+
+  relationships: [
+    relationship(data_pipeline_attention_seconds_v2.uuid > data_pipeline_detection_demography.uuid, true),
+    relationship(data_pipeline_attention_seconds_v2.property_id > data_pipeline_properties.property_number, true),
+    relationship(data_pipeline_attention_seconds_v2.campaign_ad_key > data_pipeline_stg_campaigns.campaign_ad_key, true),
+    relationship(data_pipeline_stg_campaigns.campaign_id > data_pipeline_stg_client_dashboard_campaign_groups_lu.campaign_id_text, true),
+    relationship(data_pipeline_stg_campaigns.ad_id > data_pipeline_stg_client_dashboard_creative_groups_lu.creative_id, true),
+    relationship(data_pipeline_creative_city_mapping_table.campaign_ad_key > data_pipeline_stg_campaigns.campaign_ad_key, true)
+  ]
+
+  metric average_attention_seconds {
+    label: 'Average Attention Seconds'
+    type: 'number'
+    description: 'Average true attention seconds from the raw attention fact table.'
+    definition: @aql avg(data_pipeline_attention_seconds_v2.attention_seconds_true);;
+    format: 'none'
+  }
+
+  metric attention_events {
+    label: 'Attention Events'
+    type: 'number'
+    description: 'Count of attention detection rows.'
+    definition: @aql count(data_pipeline_attention_seconds_v2.uuid);;
+    format: 'none'
+  }
+
+  dimension is_in_campaign_flight_range {
+    label: 'Is In Campaign Flight Range'
+    type: 'truefalse'
+    hidden: false
+    description: 'Whether an attention event UTC date is inside the related campaign/ad flight window.'
+    model: data_pipeline_attention_seconds_v2
+    definition: @aql data_pipeline_attention_seconds_v2.start_date_utc >= data_pipeline_stg_campaigns.start_date and data_pipeline_attention_seconds_v2.start_date_utc <= data_pipeline_stg_campaigns.end_date;;
+  }
+}

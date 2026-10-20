@@ -1,0 +1,86 @@
+Dashboard sync_test_attention_by_city {
+  title: 'Sync Test: Attention by City'
+  description: @md One-chart dashboard used to confirm that local code syncs into the dashboards folder. ;;
+  theme: H.themes.classic
+
+  block b_title: TextBlock {
+    content: @md # Attention by City ;;
+  }
+
+  block f_date: FilterBlock {
+    label: 'Scope Date'
+    type: 'date'
+    source: FieldFilterSource {
+      dataset: attention_network_filtering_test
+      field: r(network_scope.scope_date)
+    }
+  }
+
+  block v_attention_by_city: VizBlock {
+    label: 'Attention Events by City'
+    viz: BarChart {
+      dataset: attention_network_filtering_test
+      x_axis: VizFieldFull {
+        ref: r(network_scope.city)
+        label: 'Scope City'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        series {
+          field: VizFieldFull {
+            ref: r(attention_network_filtering_test.attention_events)
+            label: 'Attention Events'
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+      }
+      tooltips: [
+        VizTooltip {
+          field: VizFieldFull {
+            ref: r(attention_network_filtering_test.average_attention_seconds)
+            label: 'Average Attention Seconds'
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+      ]
+      settings {
+        sort: LineFamilySort {
+          type: 'yaxis'
+          field_index: 0
+          direction: 'desc'
+        }
+      }
+    }
+  }
+
+  interactions: [
+    FilterInteraction {
+      from: 'f_date'
+      to: [
+        CustomMapping { block: 'v_attention_by_city' field: r(network_scope.scope_date) }
+      ]
+    }
+  ]
+
+  view: TabLayout {
+    tab main: CanvasLayout {
+      label: 'Overview'
+      width: 1220
+      height: 660
+      grid_size: 20
+      auto_expand_vertically: true
+      block b_title { position: pos(20, 20, 1180, 100) layer: 1 }
+      block f_date { position: pos(20, 140, 280, 100) layer: 1 }
+      block v_attention_by_city { position: pos(20, 260, 1180, 380) layer: 1 }
+      mobile { mode: 'auto' }
+    }
+  }
+}

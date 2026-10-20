@@ -1,0 +1,97 @@
+Dataset attention_network_filtering_test {
+  label: 'Attention Network Filtering Test'
+  description: 'Normalized bridge POC: Campaign filters Campaign Network Scope, which selects unique date, property/city, and grouped ad-length scope rows used to filter Attention Seconds.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  models: [
+    data_pipeline_attention_seconds_v2,
+    data_pipeline_detection_demography,
+    data_pipeline_raw_campaigns,
+    campaign_network_scope_bridge,
+    network_scope
+  ]
+
+  relationships: [
+    relationship(data_pipeline_attention_seconds_v2.uuid > data_pipeline_detection_demography.uuid, true),
+    relationship(data_pipeline_attention_seconds_v2.network_scope_key > network_scope.network_scope_key, true, direction: 'one_way'),
+    relationship(data_pipeline_attention_seconds_v2.campaign_id > data_pipeline_raw_campaigns.campaign_id_text, false, direction: 'two_way'),
+    relationship(campaign_network_scope_bridge.campaign_id > data_pipeline_raw_campaigns.campaign_id_text, true, direction: 'two_way'),
+    relationship(campaign_network_scope_bridge.network_scope_key > network_scope.network_scope_key, true, direction: 'two_way')
+  ]
+
+  metric selected_campaign_start_date {
+    label: 'Selected Campaign Start Date'
+    type: 'date'
+    definition: @aql
+      min(campaign_network_scope_bridge.scope_date)
+      | of_all(data_pipeline_raw_campaigns.campaign_id, keep_filters: true)
+    ;;
+    format: 'LLL dd yyyy'
+  }
+
+  metric selected_campaign_end_date {
+    label: 'Selected Campaign End Date'
+    type: 'date'
+    definition: @aql
+      max(campaign_network_scope_bridge.scope_date)
+      | of_all(data_pipeline_raw_campaigns.campaign_id, keep_filters: true)
+    ;;
+    format: 'LLL dd yyyy'
+  }
+
+  metric base_average_attention_seconds {
+    label: 'Base Average Attention Seconds'
+    type: 'number'
+    description: 'Reusable average over eligible attention events before campaign or network context is applied.'
+    definition: @aql
+      avg(data_pipeline_attention_seconds_v2.attention_seconds_true)
+      | where(
+          data_pipeline_attention_seconds_v2.ad_id is not null,
+          data_pipeline_attention_seconds_v2.attention_seconds_true is not null,
+          data_pipeline_detection_demography.valid_age_group == true
+        )
+    ;;
+    format: 'none'
+  }
+
+  metric campaign_average_attention_seconds {
+    label: 'Campaign Average Attention Seconds'
+    type: 'number'
+    description: 'Average attention for events belonging directly to the selected campaign, using the same eligibility filters as the network average.'
+    definition: @aql
+      base_average_attention_seconds
+      | with_relationships(
+          data_pipeline_attention_seconds_v2.campaign_id > data_pipeline_raw_campaigns.campaign_id_text
+        )
+    ;;
+    format: 'none'
+  }
+
+  metric average_attention_seconds {
+    label: 'Network Average Attention Seconds'
+    type: 'number'
+    description: 'The same average over every eligible event in the selected campaign scope. Campaign identity is excluded from the metric grain while its filter is retained to derive that scope.'
+    definition: @aql
+      base_average_attention_seconds
+      | of_all(data_pipeline_raw_campaigns.campaign_id, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric attention_events {
+    label: 'Network Attention Events'
+    type: 'number'
+    description: 'Count of network attention records at the same filter scope as Network Average Attention Seconds.'
+    definition: @aql
+      count(data_pipeline_attention_seconds_v2.uuid)
+      | where(
+          data_pipeline_attention_seconds_v2.ad_id is not null,
+          data_pipeline_attention_seconds_v2.attention_seconds_true is not null,
+          data_pipeline_detection_demography.valid_age_group == true
+        )
+      | of_all(data_pipeline_raw_campaigns.campaign_id, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+}

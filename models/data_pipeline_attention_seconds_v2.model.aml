@@ -1,0 +1,168 @@
+Model data_pipeline_attention_seconds_v2 {
+  type: 'table'
+  label: 'Attention Seconds V2'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension uuid {
+    label: 'Uuid'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.uuid }};;
+    primary_key: true
+  }
+  dimension start_at_utc {
+    label: 'Start At Utc'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at_utc }};;
+  }
+
+  dimension start_date_utc {
+    label: 'Start Date (UTC)'
+    type: 'date'
+    hidden: true
+    description: 'UTC calendar date derived from Start At Utc; used for date-dimension relationships.'
+    definition: @sql DATE({{ start_at_utc }}) ;;
+  }
+  dimension device_id {
+    label: 'Device Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.device_id }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension screen {
+    label: 'Screen'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.screen }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension campaign_ad_key {
+    label: 'Campaign Ad Key'
+    type: 'text'
+    hidden: true
+    description: 'Composite campaign/ad key for relationship modeling.'
+    definition: @sql CONCAT({{ campaign_id }}, '::', {{ ad_id }}) ;;
+  }
+  dimension attention_seconds {
+    label: 'Attention Seconds'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.attention_seconds }};;
+  }
+  dimension attention_seconds_true {
+    label: 'Attention Seconds True'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.attention_seconds_true }};;
+  }
+  dimension exposure_category {
+    label: 'Exposure Category'
+    type: 'text'
+    hidden: false
+    definition: @sql
+      CASE
+        WHEN {{ attention_seconds_true }} >= 2.5 THEN 'Message Exposure'
+        WHEN {{ attention_seconds_true }} < 2.5 THEN 'Brand Exposure'
+        ELSE ''
+      END
+    ;;
+  }
+  dimension atleast_1_sec {
+    label: 'Atleast 1 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql
+      CASE
+        WHEN {{ attention_seconds_true }} >= 1 THEN '>=1'
+        WHEN {{ attention_seconds_true }} < 1 THEN '<1'
+        ELSE ''
+      END
+    ;;
+  }
+  dimension atleast_1_5_sec {
+    label: 'Atleast 1.5 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql
+      CASE
+        WHEN {{ attention_seconds_true }} >= 1.5 THEN '>=1.5'
+        WHEN {{ attention_seconds_true }} < 1.5 THEN '<1.5'
+        ELSE ''
+      END
+    ;;
+  }
+  dimension atleast_2_sec {
+    label: 'Atleast 2 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql
+      CASE
+        WHEN {{ attention_seconds_true }} >= 2 THEN '>=2'
+        WHEN {{ attention_seconds_true }} < 2 THEN '<2'
+        ELSE ''
+      END
+    ;;
+  }
+  dimension ad_length {
+    label: 'Ad Length'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_length }};;
+  }
+  dimension ad_length_grouped {
+    label: 'Ad Length Grouped'
+    type: 'number'
+    hidden: false
+    definition: @sql
+      CASE
+        WHEN {{ ad_length }} BETWEEN 5 AND 7 THEN 5
+        WHEN {{ ad_length }} BETWEEN 8 AND 12 THEN 10
+        WHEN {{ ad_length }} BETWEEN 13 AND 16 THEN 15
+        WHEN {{ ad_length }} BETWEEN 17 AND 22 THEN 20
+        WHEN {{ ad_length }} BETWEEN 28 AND 32 THEN 30
+        ELSE {{ ad_length }}
+      END
+    ;;
+  }
+  dimension network_scope_key {
+    label: 'Network Scope Key'
+    type: 'text'
+    hidden: true
+    definition: @sql
+      concat(
+        cast(date({{ start_at_utc }}) as string)
+        , '||'
+        , cast({{ property_id }} as string)
+        , '||'
+        , cast({{ ad_length_grouped }} as string)
+      )
+    ;;
+  }
+  dimension play_id {
+    label: 'Play Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.play_id }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`attention_seconds_v2`'
+}

@@ -1,0 +1,353 @@
+@tag('Status/Active')
+Model attention_seconds_network {
+  type: 'query'
+  label: 'Attention Seconds Network'
+  description: 'Consolidates attention records with selected creative-city mappings, ad-length buckets, and selected-flight-date bounds under one shared campaign scope.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  param frame_scope_campaign_id {
+    label: 'Frame Scope Campaign ID'
+    type: 'text'
+  }
+
+  param frame_scope_creative_id {
+    label: 'Frame Scope Creative ID'
+    type: 'text'
+  }
+
+  param frame_scope_report_id {
+    label: 'Frame Scope Report ID'
+    type: 'text'
+  }
+
+  param frame_scope_campaign_group {
+    label: 'Frame Scope Campaign Group'
+    type: 'text'
+  }
+
+  param frame_scope_creative_group {
+    label: 'Frame Scope Creative Group'
+    type: 'text'
+  }
+
+  param frame_scope_creative_group2 {
+    label: 'Frame Scope Creative Group 2'
+    type: 'text'
+  }
+
+  query: @sql
+    WITH scoped_creatives AS (
+      SELECT DISTINCT
+        campaigns.campaign_id,
+        campaigns.ad_id,
+        campaigns.report_code,
+        campaigns.ad_length,
+        campaigns.start_at,
+        campaigns.end_at,
+        campaign_groups.campaign_group,
+        creative_groups.creative_group,
+        creative_groups.creative_group2
+      FROM `data_pipeline.stg_campaigns` AS campaigns
+      LEFT JOIN `data_pipeline.stg_client_dashboard_campaign_groups_lu` AS campaign_groups
+        ON campaigns.campaign_id = CAST(campaign_groups.campaign_id AS STRING)
+      LEFT JOIN `data_pipeline.stg_client_dashboard_creative_groups_lu` AS creative_groups
+        ON campaigns.ad_id = creative_groups.creative_id
+      WHERE {% filter(frame_scope_campaign_id) %} campaigns.campaign_id {% end %}
+        AND {% filter(frame_scope_creative_id) %} campaigns.ad_id {% end %}
+        AND {% filter(frame_scope_report_id) %} campaigns.report_code {% end %}
+        AND {% filter(frame_scope_campaign_group) %} campaign_groups.campaign_group {% end %}
+        AND {% filter(frame_scope_creative_group) %} creative_groups.creative_group {% end %}
+        AND {% filter(frame_scope_creative_group2) %} creative_groups.creative_group2 {% end %}
+    ),
+    scope_keys AS (
+      SELECT DISTINCT
+        campaign_id,
+        ad_id,
+        report_code
+      FROM scoped_creatives
+    ),
+    selected_ad_lengths AS (
+      SELECT DISTINCT
+        campaign_id,
+        ad_id,
+        CASE
+          WHEN ad_length BETWEEN 5 AND 7 THEN 5
+          WHEN ad_length BETWEEN 8 AND 12 THEN 10
+          WHEN ad_length BETWEEN 13 AND 16 THEN 15
+          WHEN ad_length BETWEEN 17 AND 22 THEN 20
+          WHEN ad_length BETWEEN 28 AND 32 THEN 30
+          ELSE ad_length
+        END AS ad_length_grouped
+      FROM scoped_creatives
+    ),
+    selected_mapping_cities AS (
+      SELECT DISTINCT
+        mapping.campaign_id,
+        mapping.ad_id,
+        mapping.city
+      FROM `data_pipeline.creative_city_mapping` AS mapping
+      INNER JOIN scope_keys
+        ON mapping.campaign_id = scope_keys.campaign_id
+        AND mapping.ad_id = scope_keys.ad_id
+    ),
+    flight_date_bounds AS (
+      SELECT
+        MIN(DATE(start_at)) AS minimum_flight_date,
+        MAX(DATE(end_at)) AS maximum_flight_date
+      FROM scoped_creatives
+    ),
+    attention_rows AS (
+      SELECT
+        attention.uuid,
+        attention.start_at_utc,
+        DATE(attention.start_at_utc) AS start_date_utc,
+        CASE
+          WHEN properties.region IN ('NS', 'NB', 'PE', 'Nova Scotia', 'New Brunswick', 'Prince Edward Island') THEN DATETIME(attention.start_at_utc, 'America/Halifax')
+          WHEN properties.region IN ('NL', 'Newfoundland and Labrador') THEN DATETIME(attention.start_at_utc, 'America/St_Johns')
+          WHEN properties.region IN ('ON', 'QC', 'Ontario', 'Quebec') THEN DATETIME(attention.start_at_utc, 'America/Toronto')
+          WHEN properties.region IN ('MB', 'Manitoba') THEN DATETIME(attention.start_at_utc, 'America/Winnipeg')
+          WHEN properties.region IN ('SK', 'Saskatchewan') THEN DATETIME(attention.start_at_utc, 'America/Regina')
+          WHEN properties.region IN ('AB', 'NT', 'Alberta', 'Northwest Territories') THEN DATETIME(attention.start_at_utc, 'America/Edmonton')
+          WHEN properties.region IN ('BC', 'YT', 'British Columbia', 'Yukon') THEN DATETIME(attention.start_at_utc, 'America/Vancouver')
+          ELSE DATETIME(attention.start_at_utc, 'UTC')
+        END AS start_at_local,
+        attention.device_id,
+        attention.property_id,
+        attention.campaign_id,
+        attention.ad_id,
+        attention.attention_seconds_true AS attention_seconds,
+        attention.ad_length,
+        campaigns.report_code,
+        CASE
+          WHEN attention.attention_seconds_true >= 2.5 THEN 'Message Exposure'
+          WHEN attention.attention_seconds_true < 2.5 THEN 'Brand Exposure'
+          ELSE ''
+        END AS exposure_category,
+        CASE
+          WHEN attention.attention_seconds_true >= 1 THEN '>=1'
+          WHEN attention.attention_seconds_true < 1 THEN '<1'
+          ELSE ''
+        END AS atleast_1_sec,
+        CASE
+          WHEN attention.attention_seconds_true >= 1.5 THEN '>=1.5'
+          WHEN attention.attention_seconds_true < 1.5 THEN '<1.5'
+          ELSE ''
+        END AS atleast_1_5_sec,
+        CASE
+          WHEN attention.attention_seconds_true >= 2 THEN '>=2'
+          WHEN attention.attention_seconds_true < 2 THEN '<2'
+          ELSE ''
+        END AS atleast_2_sec,
+        content_type.ads_type,
+        demo.gender,
+        demo.gender_pie,
+        demo.age_group,
+        demo.generation,
+        demo.gender_v2
+      FROM `tech-data-warehouse.data_pipeline.attention_seconds_v2` AS attention
+      INNER JOIN `tech-data-warehouse.data_pipeline.detection_demography` AS demo
+        ON attention.uuid = demo.uuid
+      LEFT JOIN `tech-data-warehouse.data_pipeline.raw_campaigns` AS campaigns
+        ON attention.campaign_id = CAST(campaigns.id AS STRING)
+      INNER JOIN scope_keys
+        ON attention.campaign_id = scope_keys.campaign_id
+        AND attention.ad_id = scope_keys.ad_id
+        AND campaigns.report_code = scope_keys.report_code
+      LEFT JOIN `tech-data-warehouse.data_pipeline.properties` AS properties
+        ON attention.property_id = properties.id
+      LEFT JOIN (
+        SELECT DISTINCT
+          ad_id,
+          content_type AS ads_type
+        FROM `data_pipeline.stg_campaigns`
+        WHERE content_type IS NOT NULL
+      ) AS content_type
+        ON attention.ad_id = content_type.ad_id
+      WHERE attention.ad_id IS NOT NULL
+        AND attention.attention_seconds_true IS NOT NULL
+        AND demo.age_group NOT IN ('18 below', 'no info')
+    )
+    SELECT
+      attention_rows.*,
+      selected_ad_lengths.ad_length_grouped,
+      selected_mapping_cities.city,
+      flight_date_bounds.minimum_flight_date,
+      flight_date_bounds.maximum_flight_date,
+      CASE
+        WHEN attention_rows.start_date_utc BETWEEN flight_date_bounds.minimum_flight_date AND flight_date_bounds.maximum_flight_date THEN TRUE
+        ELSE FALSE
+      END AS is_in_flight_range
+    FROM attention_rows
+    LEFT JOIN selected_ad_lengths
+      ON attention_rows.campaign_id = selected_ad_lengths.campaign_id
+      AND attention_rows.ad_id = selected_ad_lengths.ad_id
+    LEFT JOIN selected_mapping_cities
+      ON attention_rows.campaign_id = selected_mapping_cities.campaign_id
+      AND attention_rows.ad_id = selected_mapping_cities.ad_id
+    CROSS JOIN flight_date_bounds
+  ;;
+
+  models: []
+
+  dimension uuid {
+    label: 'Uuid'
+    type: 'text'
+    definition: @sql {{ #SOURCE.uuid }};;
+  }
+
+  dimension start_at_utc {
+    label: 'Start At Utc'
+    type: 'datetime'
+    definition: @sql {{ #SOURCE.start_at_utc }};;
+  }
+
+  dimension start_date_utc {
+    label: 'Start Date Utc'
+    type: 'date'
+    definition: @sql {{ #SOURCE.start_date_utc }};;
+  }
+
+  dimension start_at_local {
+    label: 'Start At Local'
+    type: 'datetime'
+    definition: @sql {{ #SOURCE.start_at_local }};;
+  }
+
+  dimension device_id {
+    label: 'Device Id'
+    type: 'text'
+    definition: @sql {{ #SOURCE.device_id }};;
+  }
+
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+
+  dimension attention_seconds {
+    label: 'Attention Seconds'
+    type: 'number'
+    definition: @sql {{ #SOURCE.attention_seconds }};;
+  }
+
+  dimension ad_length {
+    label: 'Ad Length'
+    type: 'number'
+    definition: @sql {{ #SOURCE.ad_length }};;
+  }
+
+  dimension report_code {
+    label: 'Report Code'
+    type: 'text'
+    definition: @sql {{ #SOURCE.report_code }};;
+  }
+
+  dimension ad_length_grouped {
+    label: 'Ad Length Grouped'
+    type: 'number'
+    description: 'Ad length grouped using the selected-creative bucket rules.'
+    definition: @sql {{ #SOURCE.ad_length_grouped }};;
+  }
+
+  dimension exposure_category {
+    label: 'Exposure Category'
+    type: 'text'
+    definition: @sql {{ #SOURCE.exposure_category }};;
+  }
+
+  dimension atleast_1_sec {
+    label: 'Atleast 1 Sec'
+    type: 'text'
+    definition: @sql {{ #SOURCE.atleast_1_sec }};;
+  }
+
+  dimension atleast_1_5_sec {
+    label: 'Atleast 1 5 Sec'
+    type: 'text'
+    definition: @sql {{ #SOURCE.atleast_1_5_sec }};;
+  }
+
+  dimension atleast_2_sec {
+    label: 'Atleast 2 Sec'
+    type: 'text'
+    definition: @sql {{ #SOURCE.atleast_2_sec }};;
+  }
+
+  dimension ads_type {
+    label: 'Ads Type'
+    type: 'text'
+    definition: @sql {{ #SOURCE.ads_type }};;
+  }
+
+  dimension gender {
+    label: 'Gender'
+    type: 'text'
+    definition: @sql {{ #SOURCE.gender }};;
+  }
+
+  dimension gender_pie {
+    label: 'Gender Pie'
+    type: 'text'
+    definition: @sql {{ #SOURCE.gender_pie }};;
+  }
+
+  dimension age_group {
+    label: 'Age Group'
+    type: 'text'
+    definition: @sql {{ #SOURCE.age_group }};;
+  }
+
+  dimension generation {
+    label: 'Generation'
+    type: 'text'
+    definition: @sql {{ #SOURCE.generation }};;
+  }
+
+  dimension gender_v2 {
+    label: 'Gender V2'
+    type: 'text'
+    definition: @sql {{ #SOURCE.gender_v2 }};;
+  }
+
+  dimension city {
+    label: 'City'
+    type: 'text'
+    description: 'City selected from the creative-city mapping for the current campaign scope.'
+    definition: @sql {{ #SOURCE.city }};;
+  }
+
+  dimension minimum_flight_date {
+    label: 'Minimum Flight Date'
+    type: 'date'
+    description: 'Earliest UTC flight date across the current scope selection.'
+    definition: @sql {{ #SOURCE.minimum_flight_date }};;
+  }
+
+  dimension maximum_flight_date {
+    label: 'Maximum Flight Date'
+    type: 'date'
+    description: 'Latest UTC flight date across the current scope selection.'
+    definition: @sql {{ #SOURCE.maximum_flight_date }};;
+  }
+
+  dimension is_in_flight_range {
+    label: 'Is In Flight Range'
+    type: 'truefalse'
+    description: 'Whether the attention event UTC date falls within the selected flight-date window.'
+    definition: @sql {{ #SOURCE.is_in_flight_range }};;
+  }
+}

@@ -1,0 +1,380 @@
+Dashboard viz_test {
+  title: 'Viz Test'
+  description: ''
+  owner: 'ganonuevo@verticalcity.com'
+  block title: TextBlock {
+    content: @md # Your title goes here ;;
+  }
+  block v_n7jd: VizBlock {
+    label: 'Avg of Attention Seconds True by Day Start At Utc'
+    viz: LineChart {
+      dataset: attention_network_remodeled
+      filter {
+        field: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        operator: 'between'
+        value: [
+          '2026-09-01',
+          '2026-09-30'
+        ]
+      }
+      x_axis: VizFieldFull {
+        ref: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        transformation: 'datetrunc day'
+        format {
+          type: 'date'
+          pattern: 'LLL dd, yyyy'
+        }
+      }
+      y_axis {
+        series {
+          field: VizFieldFull {
+            ref: r(data_pipeline_attention_seconds_v2.attention_seconds_true)
+            aggregation: 'avg'
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+          settings {
+            color: '#998CE0'
+          }
+        }
+      }
+      settings {
+        show_data_points: true
+        row_limit: 5000
+        x_axis_show_null_datetime: true
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block v_eyx5: VizBlock {
+    label: 'Avg of Attention Seconds True by Day Start At Utc copy'
+    viz: ColumnChart {
+      dataset: attention_network_remodeled
+      filter {
+        field: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        operator: 'between'
+        value: [
+          '2026-09-01',
+          '2026-09-30'
+        ]
+      }
+      x_axis: VizFieldFull {
+        ref: r(data_pipeline_properties.region)
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        series {
+          field: VizFieldFull {
+            ref: r(data_pipeline_attention_seconds_v2.attention_seconds_true)
+            aggregation: 'avg'
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+          settings {
+            color: '#998CE0'
+          }
+        }
+      }
+      settings {
+        row_limit: 5000
+        x_axis_show_null_datetime: true
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block v_fj7r: VizBlock {
+    label: 'Avg of Attention Seconds True by Day Start At Utc copy copy'
+    viz: MetricKpi {
+      dataset: attention_network_remodeled
+      filter {
+        field: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        operator: 'between'
+        value: [
+          '2026-09-01',
+          '2026-09-30'
+        ]
+      }
+      value: VizFieldFull {
+        ref: r(data_pipeline_attention_seconds_v2.attention_seconds_true)
+        aggregation: 'avg'
+        format {
+          type: 'number'
+          pattern: 'inherited'
+        }
+      }
+      compare_value: VizPopSettings {
+        field: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        value: RelativePopValue {
+          duration: 1
+          granularity: 'year'
+        }
+      }
+      settings {
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+    settings {
+      hide_label: true
+    }
+  }
+  block v_qnlb: VizBlock {
+    label: 'Avg of Attention Seconds True by Day Start At Utc copy copy copy'
+    viz: MetricSheet {
+      dataset: attention_network_remodeled
+      filter {
+        field: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        operator: 'between'
+        value: [
+          '2026-06-01',
+          '2026-09-30'
+        ]
+      }
+      date_field: VizFieldFull {
+        ref: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        transformation: 'datetrunc month'
+        format {
+          type: 'date'
+          pattern: 'LLL yyyy'
+        }
+      }
+      rows: [
+        MetricSeries {
+          field: VizFieldFull {
+            ref: r(data_pipeline_attention_seconds_v2.attention_seconds_true)
+            aggregation: 'avg'
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+      ]
+      settings {
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block v_n8fd: VizBlock {
+    label: 'Avg of Attention Seconds True by Day Start At Utc copy copy copy'
+    viz: DataTable {
+      dataset: attention_network_remodeled
+      filter {
+        field: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        operator: 'between'
+        value: [
+          '2026-09-01',
+          '2026-09-30'
+        ]
+      }
+      theme {
+        table {
+          general {
+            borders {
+              outer: true
+              horizontal: true
+              header: true
+            }
+          }
+        }
+      }
+      fields: [
+        VizFieldFull {
+          ref: r(data_pipeline_properties.city)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(data_pipeline_attention_seconds_v2.attention_seconds_true)
+          aggregation: 'avg'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+          uname: 'avg_attention_seconds_true'
+        }
+      ]
+      settings {
+        show_row_number: true
+        conditional_formats: [
+          ConditionalFormat {
+            key: 'avg_attention_seconds_true'
+            aggregation: 'avg'
+            format: SingleFormat {
+              condition {
+                operator: 'less_than'
+                value: 5
+              }
+              text_color: '#D70909'
+              background_color: '#B5E3CD'
+              apply_to_row: true
+            }
+          }
+        ]
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block avg_attention_by_province: VizBlock {
+    label: 'Daily Average Attention Seconds by Province'
+    viz: CombinationChart {
+      dataset: attention_network_remodeled
+      conditions: [
+        'data_pipeline_attention_seconds_v2.start_at_utc matches @(2026-09-01 - 2026-09-30)',
+        'data_pipeline_properties.region is not null',
+        "data_pipeline_properties.region != ''"
+      ]
+      x_axis: VizFieldFull {
+        label: 'Day'
+        ref: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        transformation: 'datetrunc day'
+        format {
+          type: 'date'
+          pattern: 'LLL dd, yyyy'
+        }
+      }
+      legend: VizFieldFull {
+        label: 'Province'
+        ref: r(data_pipeline_properties.region)
+      }
+      y_axis {
+        label: 'Average Attention Seconds'
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            label: 'Average Attention Seconds'
+            ref: r(attention_network_remodeled.average_attention_seconds)
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+          settings {
+            color_palette: vi
+          }
+        }
+      }
+      settings {
+        sort {
+          field_index: 0
+          direction: 'asc'
+          type: 'xaxis'
+        }
+        legend_label: 'top'
+        x_axis_label: 'Day'
+        x_axis_show_null_datetime: true
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+
+  view: CanvasLayout {
+    label: 'View 1'
+    width: 1300
+    height: 1780
+    grid_size: 20
+    auto_expand_vertically: true
+    block title {
+      position: pos(20, 20, 1260, 60)
+    }
+    block v_n7jd {
+      position: pos(20, 100, 780, 440)
+      layer: 1
+    }
+    block v_eyx5 {
+      position: pos(20, 560, 780, 440)
+      layer: 1
+    }
+    block v_fj7r {
+      position: pos(840, 100, 280, 120)
+      layer: 1
+    }
+    block v_qnlb {
+      position: pos(0, 1100, 1080, 200)
+      layer: 1
+    }
+    block v_n8fd {
+      position: pos(840, 240, 400, 380)
+      layer: 1
+    }
+    block avg_attention_by_province {
+      position: pos(20, 1320, 780, 440)
+      layer: 1
+    }
+    mobile {
+      mode: 'auto'
+    }
+  }
+  explicit_interactions: [
+    FilterInteraction {
+      from: 'v_n7jd'
+      to: [
+        'v_eyx5',
+        'v_fj7r',
+        'v_qnlb',
+        'v_n8fd'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_eyx5'
+      to: [
+        'v_n7jd',
+        'v_fj7r',
+        'v_qnlb',
+        'v_n8fd'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_fj7r'
+      to: [
+        'v_n7jd',
+        'v_eyx5',
+        'v_qnlb',
+        'v_n8fd'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_qnlb'
+      to: [
+        'v_n7jd',
+        'v_eyx5',
+        'v_fj7r',
+        'v_n8fd'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_n8fd'
+      to: [
+        'v_n7jd',
+        'v_eyx5',
+        'v_qnlb',
+        'v_fj7r'
+      ]
+    }
+  ]
+  theme: H.themes.charcoal
+}

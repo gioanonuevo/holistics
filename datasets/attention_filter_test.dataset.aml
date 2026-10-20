@@ -1,0 +1,12 @@
+Dataset attention_filter_test {
+  label: 'attention_filter_test'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  models: [
+    data_pipeline_attention_seconds_v2,
+    filter_model
+  ]
+  relationships: [
+    relationship(data_pipeline_attention_seconds_v2.ad_id > filter_model.ad_id, true)
+  ]
+}

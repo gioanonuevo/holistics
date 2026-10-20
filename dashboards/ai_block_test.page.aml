@@ -1,0 +1,300 @@
+Dashboard ai_block_test {
+  title: 'Attention Network Overview'
+  description: 'Monitor attention volume and quality over time, then identify the content and audience segments that need action. '
+  owner: 'ganonuevo@verticalcity.com'
+
+  block b_title: TextBlock {
+    content: @md
+      # Attention Network Overview
+      Review attention volume, average attention quality, and the segments driving performance. Use the controls to focus on an advertiser or reporting period.
+    ;;
+  }
+  block f_date: FilterBlock {
+    label: 'Attention Event Date'
+    type: 'date'
+    source: FieldFilterSource {
+      dataset: attention_network_remodeled
+      field: r(data_pipeline_attention_seconds_v2.start_at_utc)
+    }
+  }
+  block f_advertiser: FilterBlock {
+    label: 'Advertiser'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention_network_remodeled
+      field: r(data_pipeline_stg_campaigns.advertiser)
+    }
+  }
+  block v_attention_events: VizBlock {
+    label: 'Attention Events'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention_network_remodeled
+      value: VizFieldFull {
+        ref: r(attention_network_remodeled.attention_events)
+        label: 'Attention Events'
+        format {
+          type: 'number'
+          pattern: 'inherited'
+        }
+      }
+      settings {
+        display_mode: 'single'
+      }
+    }
+  }
+  block v_average_attention: VizBlock {
+    label: 'Average Attention Seconds'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention_network_remodeled
+      value: VizFieldFull {
+        ref: r(attention_network_remodeled.average_attention_seconds)
+        label: 'Average Attention Seconds'
+        format {
+          type: 'number'
+          pattern: '#,###0.00[$s]'
+        }
+      }
+    }
+  }
+  block ai_performance_summary: AiBlock {
+    label: 'AI Performance Summary'
+    prompt: @md
+      Summarize this dashboard’s attention-performance trends for the period in view. Highlight notable changes, the best- and worst-performing content or demographic segments, and one action to consider.
+
+      Return only a compact, polished HTML fragment—no Markdown and no code fences. Make the brief easy to scan with visual HTML elements where they clarify the insight:
+      - Use this spacing structure exactly: one outer <div style="line-height: 1.65; font-size: 14px;">; a headline <p style="margin: 0 0 12px;">; a <ul style="margin: 0 0 14px; padding-left: 22px;">; each <li style="margin-bottom: 8px;">; and an action <p style="margin: 14px 0 0;">. Never place two insights on the same line.
+      - Start with a short bold headline in the headline <p>.
+      - Use small coloured pill tags (<span> elements with minimal inline styles) to label positive, negative, neutral, and action-oriented findings.
+      - Include up to three concise insight bullets in the <ul>, with one complete observation per <li>.
+      - When a trend, comparison, or ranking is central, add one small inline <svg> diagram (such as a sparkline, directional arrow, or simple comparison bars) with an accessible aria-label. Place it in its own <p style="margin: 10px 0 14px;">. Do not add an SVG when the available data does not support one.
+      - End with one clearly labelled recommended action in the action <p>.
+
+      Use semantic, self-contained HTML only: <div>, <p>, <strong>, <span>, <ul>, <li>, <br>, and the required <svg> child elements. Keep inline styles limited to typography, line height, margins, pill colours, and SVG sizing. Do not use tables, headings, images, external links, scripts, or emojis. Keep the response under 160 words.
+    ;;
+  }
+  block h_trend: TextBlock {
+    content: @md ## Weekly attention trend
+Compare weekly event volume with average attention quality. ;;
+  }
+  block v_weekly_trend: VizBlock {
+    label: 'Weekly Attention Trend'
+    viz: CombinationChart {
+      dataset: attention_network_remodeled
+      x_axis: VizFieldFull {
+        label: 'Week Start'
+        ref: r(data_pipeline_attention_seconds_v2.start_at_utc)
+        transformation: 'datetrunc week'
+        format {
+          type: 'date'
+          pattern: 'LLL dd, yyyy'
+        }
+      }
+      y_axis {
+        label: 'Attention Events'
+        series {
+          mark_type: 'column'
+          field: VizFieldFull {
+            label: 'Attention Events'
+            ref: r(attention_network_remodeled.attention_events)
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+        settings {
+          alignment: 'left'
+        }
+      }
+      y_axis {
+        label: 'Average Attention Seconds'
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            label: 'Average Attention Seconds'
+            ref: r(attention_network_remodeled.average_attention_seconds)
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+        settings {
+          alignment: 'right'
+        }
+      }
+      settings {
+        legend_label: 'top'
+        show_data_points: true
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+  block h_drivers: TextBlock {
+    content: @md ## Attention drivers
+Compare average attention seconds by content format and detected gender segment. ;;
+  }
+  block v_content_type: VizBlock {
+    label: 'Average Attention by Content Type'
+    viz: CombinationChart {
+      dataset: attention_network_remodeled
+      x_axis: VizFieldFull {
+        ref: r(data_pipeline_stg_campaigns.content_type)
+        label: 'Content Type'
+      }
+      y_axis {
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention_network_remodeled.average_attention_seconds)
+            label: 'Average Attention Seconds'
+            format {
+              type: 'number'
+              pattern: '#,###0.00[$s]'
+            }
+          }
+        }
+      }
+      settings {
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+  block v_gender: VizBlock {
+    label: 'Average Attention by Gender'
+    viz: CombinationChart {
+      dataset: attention_network_remodeled
+      x_axis: VizFieldFull {
+        ref: r(data_pipeline_detection_demography.gender_v2)
+        label: 'Gender V2'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention_network_remodeled.average_attention_seconds)
+            label: 'Average Attention Seconds'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+      }
+      settings {
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+  explicit_interactions: [
+    FilterInteraction {
+      from: 'f_date'
+      to: [
+        'v_attention_events',
+        'v_average_attention',
+        'v_weekly_trend',
+        'v_content_type',
+        'v_gender'
+      ]
+      field: r(data_pipeline_attention_seconds_v2.start_at_utc)
+    },
+    FilterInteraction {
+      from: 'f_advertiser'
+      to: [
+        'v_attention_events',
+        'v_average_attention',
+        'v_weekly_trend',
+        'v_content_type',
+        'v_gender'
+      ]
+      field: r(data_pipeline_stg_campaigns.advertiser)
+    }
+  ]
+
+  view: TabLayout {
+    tab overview: CanvasLayout {
+      label: 'Overview'
+      width: 1300
+      height: 1900
+      grid_size: 20
+      auto_expand_vertically: true
+      default_zoom: 'fit_to_width'
+      block b_title {
+        position: pos(20, 20, 1260, 120)
+        layer: 1
+      }
+      block f_date {
+        position: pos(20, 160, 300, 100)
+        layer: 1
+      }
+      block f_advertiser {
+        position: pos(340, 160, 300, 100)
+        layer: 1
+      }
+      block v_attention_events {
+        position: pos(20, 280, 620, 120)
+        layer: 1
+      }
+      block v_average_attention {
+        position: pos(660, 280, 620, 120)
+        layer: 1
+      }
+      block ai_performance_summary {
+        position: pos(20, 420, 620, 300)
+        layer: 1
+      }
+      block h_trend {
+        position: pos(20, 740, 1260, 100)
+        layer: 1
+      }
+      block v_weekly_trend {
+        position: pos(20, 860, 1260, 400)
+        layer: 1
+      }
+      block h_drivers {
+        position: pos(20, 1280, 1260, 100)
+        layer: 1
+      }
+      block v_content_type {
+        position: pos(20, 1400, 620, 480)
+        layer: 1
+      }
+      block v_gender {
+        position: pos(660, 1400, 620, 480)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+  }
+
+  theme: DynamicPageTheme {
+    light: vc_light_theme
+    dark: vc_dark_theme
+  }
+  settings {
+    timezone: 'Etc/UTC'
+    cache_duration: 1440
+    autorun_on_open: true
+    autorun_on_changes: true
+  }
+}

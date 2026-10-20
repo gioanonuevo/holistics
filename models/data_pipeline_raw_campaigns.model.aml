@@ -1,0 +1,59 @@
+Model data_pipeline_raw_campaigns {
+  type: 'table'
+  label: 'Campaigns'
+  description: 'One row per original campaign. This model provides campaign identity and metadata for network-scope filtering.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension campaign_id {
+    label: 'Campaign ID'
+    type: 'number'
+    primary_key: true
+    definition: @sql {{ #SOURCE.id }};;
+  }
+
+  dimension campaign_id_text {
+    label: 'Campaign ID Text'
+    type: 'text'
+    hidden: true
+    definition: @sql cast({{ campaign_id }} as string);;
+  }
+
+  dimension campaign_name {
+    label: 'Campaign Name'
+    type: 'text'
+    definition: @sql {{ #SOURCE.campaign_name }};;
+  }
+
+  dimension report_code {
+    label: 'Report Code'
+    type: 'text'
+    definition: @sql {{ #SOURCE.report_code }};;
+  }
+
+  dimension campaign_type {
+    label: 'Campaign Type'
+    type: 'text'
+    definition: @sql {{ #SOURCE.campaign_type }};;
+  }
+
+  dimension status {
+    label: 'Status'
+    type: 'text'
+    definition: @sql {{ #SOURCE.status }};;
+  }
+
+  dimension start_at {
+    label: 'Start At'
+    type: 'datetime'
+    definition: @sql {{ #SOURCE.start_at }};;
+  }
+
+  dimension end_at {
+    label: 'End At'
+    type: 'datetime'
+    definition: @sql {{ #SOURCE.end_at }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`raw_campaigns`'
+}

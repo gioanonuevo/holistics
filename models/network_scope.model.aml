@@ -1,0 +1,75 @@
+Model network_scope {
+  type: 'query'
+  label: 'Network Scope'
+  description: 'One row per date, property, and grouped ad length used as the conformed scope between campaigns and attention facts.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  query: @sql
+    select distinct
+      scope_date
+      , mapping.city
+      , properties.id as property_id
+      , case
+          when campaigns.ad_length between 5 and 7 then 5
+          when campaigns.ad_length between 8 and 12 then 10
+          when campaigns.ad_length between 13 and 16 then 15
+          when campaigns.ad_length between 17 and 22 then 20
+          when campaigns.ad_length between 28 and 32 then 30
+          else campaigns.ad_length
+        end as ad_length_grouped
+    from `data_pipeline.stg_campaigns` as campaigns
+    inner join `data_pipeline.creative_city_mapping` as mapping
+      on campaigns.campaign_id = mapping.campaign_id
+      and campaigns.ad_id = mapping.ad_id
+    inner join `data_pipeline.properties` as properties
+      on mapping.city = properties.city
+    cross join unnest(
+      generate_date_array(date(campaigns.start_at), date(campaigns.end_at))
+    ) as scope_date
+    where campaigns.ad_length is not null
+      and mapping.city is not null
+      and properties.id is not null
+  ;;
+
+  dimension network_scope_key {
+    label: 'Network Scope Key'
+    type: 'text'
+    hidden: true
+    primary_key: true
+    definition: @sql
+      concat(
+        cast({{ scope_date }} as string)
+        , '||'
+        , cast({{ property_id }} as string)
+        , '||'
+        , cast({{ ad_length_grouped }} as string)
+      )
+    ;;
+  }
+
+  dimension scope_date {
+    label: 'Date'
+    type: 'date'
+    definition: @sql {{ #SOURCE.scope_date }};;
+  }
+
+  dimension city {
+    label: 'City'
+    type: 'text'
+    definition: @sql {{ #SOURCE.city }};;
+  }
+
+  dimension property_id {
+    label: 'Property ID'
+    type: 'number'
+    hidden: true
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+
+  dimension ad_length_grouped {
+    label: 'Ad Length Grouped'
+    type: 'number'
+    definition: @sql {{ #SOURCE.ad_length_grouped }};;
+  }
+}

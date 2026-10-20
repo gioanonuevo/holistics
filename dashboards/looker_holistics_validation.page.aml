@@ -1,0 +1,139 @@
+Dashboard looker_holistics_validation {
+  title: 'Looker Holistics Validation'
+  description: ''
+  owner: 'ganonuevo@verticalcity.com'
+  block title: TextBlock {
+    content: @md # Your title goes here ;;
+  }
+  block f_report: FilterBlock {
+    label: 'Campaign ID or Ad ID'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention
+      field: r(attention_base.report_filter)
+    }
+    default {
+      operator: 'is'
+      value: '10605'
+    }
+    settings {
+      input_type: 'single'
+    }
+  }
+  block v_yjz9: VizBlock {
+    label: 'Base Average Attention Seconds, Campaign Average Attention Seconds and 2 more'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        "filter_model.report_filter == coalesce((attention_base.report_filter | first()), '__all__') or coalesce((attention_base.report_filter | first()), '__all__') == '__all__'"
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention.base_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+          uname: 'custom_base_average_attention_seconds'
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+          uname: 'custom_campaign_average_attention_seconds'
+        },
+        VizFieldFull {
+          ref: r(attention.average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+          uname: 'custom_average_attention_seconds'
+        },
+        VizFieldFull {
+          ref: r(attention.attention_events)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.selected_campaign_start_date)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.selected_campaign_end_date)
+          format {
+            type: 'date'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+        column_styles: [
+          ColumnStyle {
+            key: 'custom_base_average_attention_seconds'
+            width: 163
+          },
+          ColumnStyle {
+            key: 'custom_campaign_average_attention_seconds'
+            width: 174
+          },
+          ColumnStyle {
+            key: 'custom_average_attention_seconds'
+            width: 180
+          }
+        ]
+      }
+    }
+  }
+
+  view: CanvasLayout {
+    label: 'View 1'
+    width: 1300
+    height: 800
+    grid_size: 20
+    auto_expand_vertically: true
+    block title {
+      position: pos(20, 20, 1260, 60)
+    }
+    block f_report {
+      position: pos(20, 100, 620, 80)
+    }
+    block v_yjz9 {
+      position: pos(20, 200, 620, 420)
+      layer: 1
+    }
+    mobile {
+      mode: 'auto'
+    }
+  }
+
+  theme: DynamicPageTheme {
+    light: H.themes.vanilla
+    dark: H.themes.charcoal
+  }
+  explicit_interactions: [
+    FilterInteraction {
+      from: 'f_report'
+      to: [
+        'v_yjz9'
+      ]
+      field: r(attention_base.report_filter)
+    }
+  ]
+}

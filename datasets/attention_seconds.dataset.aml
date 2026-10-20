@@ -1,0 +1,47 @@
+Dataset attention_seconds_dataset {
+  label: 'attention_seconds'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  models: [
+    flight_date_range_clipping_helper_v,
+    data_pipeline_properties,
+    attention_seconds,
+    attention_seconds_network,
+    ad_length_clipping_helper_v,
+    data_pipeline_creative_city_mapping
+  ]
+  relationships: [
+    relationship(attention_seconds.ad_length_grouped > ad_length_clipping_helper_v.ad_length_grouped, true, nullable = false)
+    ,
+    relationship(attention_seconds.property_id > data_pipeline_properties.property_number, true , nullable = false)
+    ,
+    relationship(data_pipeline_creative_city_mapping.city - data_pipeline_properties.city, true , nullable = false)
+    ,
+    relationship(attention_seconds.start_date_utc > flight_date_range_clipping_helper_v.dates, true, nullable = false)
+  ]
+
+  metric _start {
+    label: "_start"
+    type: "date"
+    hidden: false
+    description: ""
+    definition: @aql max(flight_date_range_clipping_helper_v.minimum_flight_date) |keep_grains(keep_filters: true);;
+    format: "LLL dd yyyy"
+  }
+  metric _end {
+    label: "_end"
+    type: "date"
+    hidden: false
+    description: ""
+    definition: @aql max(flight_date_range_clipping_helper_v.maximum_flight_date) |keep_grains(keep_filters: true);;
+    format: "LLL dd yyyy"
+  }
+  dimension is_in_flight_range {
+    label: "Is in flight range"
+    type: "truefalse"
+    hidden: false
+    description: ""
+    definition: @aql attention_seconds.start_date_utc >= _start and attention_seconds.start_date_utc <= _end;;
+    model: attention_seconds
+  }
+}

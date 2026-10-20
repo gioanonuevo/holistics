@@ -1,0 +1,78 @@
+Dashboard attention_sample {
+  title: 'Attention Sample'
+  description: @md Sample dashboard showing average attention time by viewer age group. ;;
+  owner: 'ganonuevo@verticalcity.com'
+  theme: H.themes.classic
+
+  block b_title: TextBlock {
+    content: @md
+      # Attention Sample
+      Average seconds of attention per eligible event, by viewer age group. Pick a campaign to see its network scope.
+    ;;
+  }
+
+  block f_campaign: FilterBlock {
+    label: 'Campaign'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention_network_filtering_test
+      field: r(data_pipeline_raw_campaigns.campaign_name)
+    }
+  }
+
+  block v_attention_by_age: VizBlock {
+    label: 'Network Average Attention Seconds by Age Group'
+    viz: ColumnChart {
+      dataset: attention_network_filtering_test
+      x_axis: VizFieldFull {
+        ref: r(data_pipeline_detection_demography.age_group)
+        label: 'Age Group'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        series {
+          field: VizFieldFull {
+            ref: r(attention_network_filtering_test.average_attention_seconds)
+            label: 'Network Average Attention Seconds'
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+      }
+      settings {
+        x_axis_label: 'Age Group'
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+
+  interactions: [
+    FilterInteraction {
+      from: 'f_campaign'
+      to: [
+        CustomMapping { block: 'v_attention_by_age' field: r(data_pipeline_raw_campaigns.campaign_name) }
+      ]
+    }
+  ]
+
+  view: TabLayout {
+    tab main: CanvasLayout {
+      label: 'Overview'
+      width: 1220
+      height: 660
+      grid_size: 20
+      auto_expand_vertically: true
+      block b_title { position: pos(20, 20, 1180, 100) layer: 1 }
+      block f_campaign { position: pos(20, 140, 380, 100) layer: 1 }
+      block v_attention_by_age { position: pos(20, 260, 1180, 380) layer: 1 }
+      mobile { mode: 'auto' }
+    }
+  }
+}

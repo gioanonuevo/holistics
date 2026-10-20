@@ -1,0 +1,241 @@
+@tag('Status/Active')
+Model attention_seconds {
+  type: 'query'
+  label: 'Attention Seconds'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension uuid {
+    label: 'Uuid'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.uuid }};;
+  }
+  dimension start_at_utc {
+    label: 'Start At Utc'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at_utc }};;
+  }
+  dimension start_date_utc {
+    label: 'Start Date Utc'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_date_utc }};;
+  }
+  dimension start_at_local {
+    label: 'Start At Local'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at_local }};;
+  }
+  dimension device_id {
+    label: 'Device Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.device_id }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension attention_seconds {
+    label: 'Attention Seconds'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.attention_seconds }};;
+  }
+  dimension ad_length {
+    label: 'Ad Length'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_length }};;
+  }
+  dimension report_code {
+    label: 'Report Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.report_code }};;
+  }
+  dimension ad_length_grouped {
+    label: 'Ad Length Grouped'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_length_grouped }};;
+  }
+  dimension exposure_category {
+    label: 'Exposure Category'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.exposure_category }};;
+  }
+  dimension atleast_1_sec {
+    label: 'Atleast 1 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.atleast_1_sec }};;
+  }
+  dimension atleast_1_5_sec {
+    label: 'Atleast 1 5 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.atleast_1_5_sec }};;
+  }
+  dimension atleast_2_sec {
+    label: 'Atleast 2 Sec'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.atleast_2_sec }};;
+  }
+  dimension ads_type {
+    label: 'Ads Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ads_type }};;
+  }
+  dimension gender {
+    label: 'Gender'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.gender }};;
+  }
+  dimension gender_pie {
+    label: 'Gender Pie'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.gender_pie }};;
+  }
+  dimension age_group {
+    label: 'Age Group'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.age_group }};;
+  }
+  dimension generation {
+    label: 'Generation'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.generation }};;
+  }
+  dimension gender_v2 {
+    label: 'Gender V2'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.gender_v2 }};;
+  }
+
+    dimension city {
+    label: 'city'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.city }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    SELECT
+    attention.uuid,
+    start_at_utc,
+    DATE(start_at_utc) as start_date_utc,
+          CASE
+        -- Atlantic Time (Includes DST)
+        WHEN region IN ('NS', 'NB', 'PE', 'Nova Scotia', 'New Brunswick', 'Prince Edward Island')
+            THEN DATETIME(start_at_utc, 'America/Halifax')
+        -- Newfoundland Time (Handles the unique 30-min offset + DST)
+        WHEN region IN ('NL', 'Newfoundland and Labrador')
+            THEN DATETIME(start_at_utc, 'America/St_Johns')
+        -- Eastern Time (Toronto/Montreal)
+        WHEN region IN ('ON', 'QC', 'Ontario', 'Quebec')
+            THEN DATETIME(start_at_utc, 'America/Toronto')
+        -- Central Time (Winnipeg)
+        WHEN region IN ('MB', 'Manitoba')
+            THEN DATETIME(start_at_utc, 'America/Winnipeg')
+        -- Saskatchewan (Correctly stays on CST year-round)
+        WHEN region IN ('SK', 'Saskatchewan')
+            THEN DATETIME(start_at_utc, 'America/Regina')
+        -- Mountain Time (Edmonton/Calgary)
+        WHEN region IN ('AB', 'NT', 'Alberta', 'Northwest Territories')
+            THEN DATETIME(start_at_utc, 'America/Edmonton')
+        -- Pacific Time (Vancouver)
+        WHEN region IN ('BC', 'YT', 'British Columbia', 'Yukon')
+            THEN DATETIME(start_at_utc, 'America/Vancouver')
+        ELSE DATETIME(start_at_utc, 'UTC')
+          END as start_at_local,
+          device_id,
+          property_id,
+          attention.campaign_id,
+          attention.ad_id,
+          attention_seconds_true as attention_seconds,
+          ad_length,
+          campaigns.report_code,
+          case
+          when ad_length between 5 and 7 then 5
+          when ad_length between 8 and 12 then 10
+          when ad_length between 13 and 16 then 15
+          when ad_length between 17 and 22 then 20
+          when ad_length between 28 and 32 then 30
+          else ad_length
+          end as ad_length_grouped,
+          case
+          when attention_seconds_true >= 2.5 then 'Message Exposure'
+          when attention_seconds_true < 2.5 then 'Brand Exposure'
+          else ''
+          end as exposure_category,
+          case
+          when attention_seconds_true >= 1 then '>=1'
+          when attention_seconds_true < 1 then '<1'
+          else ''
+          end as atleast_1_sec,
+          case
+          when attention_seconds_true >= 1.5 then '>=1.5'
+          when attention_seconds_true < 1.5 then '<1.5'
+          else ''
+          end as atleast_1_5_sec,
+          case
+          when attention_seconds_true >= 2 then '>=2'
+          when attention_seconds_true < 2 then '<2'
+          else ''
+          end as atleast_2_sec,
+          ads_type,
+          demo.gender,
+          demo.gender_pie,
+          demo.age_group,
+          demo.generation,
+          demo.gender_v2,
+          city,
+          FROM
+          `tech-data-warehouse.data_pipeline.attention_seconds_v2` attention
+          INNER JOIN
+          `tech-data-warehouse.data_pipeline.detection_demography` demo
+          ON attention.uuid = demo.uuid
+          LEFT JOIN
+         `tech-data-warehouse.data_pipeline.raw_campaigns` campaigns
+          ON attention.campaign_id = cast(campaigns.id as string)
+          LEFT JOIN
+          `tech-data-warehouse.data_pipeline.properties` properties
+          ON attention.property_id = properties.id
+          LEFT JOIN (
+          select
+          distinct
+          ad_id,
+          content_type as ads_type from `data_pipeline.stg_campaigns`
+          where content_type is not null
+          ) content_type
+          ON attention.ad_id = content_type.ad_id
+          WHERE attention.ad_id IS NOT NULL and attention_seconds_true is NOT NULL and age_group not in ('18 below','no info');;
+  models: [
+  ]
+}

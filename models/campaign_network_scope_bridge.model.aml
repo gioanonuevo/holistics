@@ -1,0 +1,89 @@
+Model campaign_network_scope_bridge {
+  type: 'query'
+  label: 'Campaign Network Scope Bridge'
+  description: 'Static bridge from campaign identity to network scope. It expands campaign flights to date, matching property, and grouped ad-length rows without joining attention facts.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  query: @sql
+    select distinct
+      cast(campaigns.campaign_id as string) as campaign_id
+      , scope_date
+      , mapping.city
+      , properties.id as property_id
+      , case
+          when campaigns.ad_length between 5 and 7 then 5
+          when campaigns.ad_length between 8 and 12 then 10
+          when campaigns.ad_length between 13 and 16 then 15
+          when campaigns.ad_length between 17 and 22 then 20
+          when campaigns.ad_length between 28 and 32 then 30
+          else campaigns.ad_length
+        end as ad_length_grouped
+    from `data_pipeline.stg_campaigns` as campaigns
+    inner join `data_pipeline.creative_city_mapping` as mapping
+      on campaigns.campaign_id = mapping.campaign_id
+      and campaigns.ad_id = mapping.ad_id
+    inner join `data_pipeline.properties` as properties
+      on mapping.city = properties.city
+    cross join unnest(
+      generate_date_array(date(campaigns.start_at), date(campaigns.end_at))
+    ) as scope_date
+    where campaigns.campaign_id is not null
+      and campaigns.ad_length is not null
+      and mapping.city is not null
+      and properties.id is not null
+  ;;
+
+  dimension campaign_scope_key {
+    label: 'Campaign Scope Key'
+    type: 'text'
+    hidden: true
+    primary_key: true
+    definition: @sql concat({{ campaign_id }}, '||', {{ network_scope_key }}) ;;
+  }
+
+  dimension network_scope_key {
+    label: 'Network Scope Key'
+    type: 'text'
+    hidden: true
+    definition: @sql
+      concat(
+        cast({{ scope_date }} as string)
+        , '||'
+        , cast({{ property_id }} as string)
+        , '||'
+        , cast({{ ad_length_grouped }} as string)
+      )
+    ;;
+  }
+
+  dimension campaign_id {
+    label: 'Campaign ID'
+    type: 'text'
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+
+  dimension scope_date {
+    label: 'Scope Date'
+    type: 'date'
+    definition: @sql {{ #SOURCE.scope_date }};;
+  }
+
+  dimension city {
+    label: 'Scope City'
+    type: 'text'
+    definition: @sql {{ #SOURCE.city }};;
+  }
+
+  dimension property_id {
+    label: 'Scope Property ID'
+    type: 'number'
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+
+  dimension ad_length_grouped {
+    label: 'Scope Ad Length Grouped'
+    type: 'number'
+    definition: @sql {{ #SOURCE.ad_length_grouped }};;
+  }
+}
