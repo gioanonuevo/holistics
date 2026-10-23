@@ -1,0 +1,536 @@
+Dashboard test {
+  title: 'HOLISTICS TESTING'
+  description: ''
+  owner: 'ganonuevo@verticalcity.com'
+  block v_8ahg: VizBlock {
+    label: 'Ad Length Grouped'
+    viz: DataTable {
+      dataset: attention_seconds_dataset
+      fields: [
+        VizFieldFull {
+          ref: r(ad_length_clipping_helper_v.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block v_rb6i: VizBlock {
+    label: 'City'
+    viz: DataTable {
+      dataset: attention_seconds_dataset
+      fields: [
+        VizFieldFull {
+          ref: r(data_pipeline_creative_city_mapping.city)
+          format {
+            type: 'text'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block v_n424: VizBlock {
+    label: 'Flight Range'
+    viz: DataTable {
+      dataset: attention_seconds_dataset
+      filter {
+        field: r(attention_seconds_network.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      fields: [
+        VizFieldFull {
+          ref: r(flight_date_range_clipping_helper_v.minimum_flight_date)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(flight_date_range_clipping_helper_v.maximum_flight_date)
+          format {
+            type: 'date'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block f_campaign_id: FilterBlock {
+    label: 'Campaign ID'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention
+      field: r(flight_date_range_clipping_helper_v.frame_scope_campaign_id)
+    }
+    default {
+      operator: 'is'
+      value: '$H_NIL$'
+    }
+  }
+  block v_rj50: VizBlock {
+    label: 'Combined Logic (Expected)'
+    viz: DataTable {
+      dataset: attention_seconds_dataset
+      calculation average_of_attention_seconds_attention_second {
+        label: 'Average of Attention Seconds Attention Seconds'
+        formula: @aql avg(attention_seconds.attention_seconds);;
+        calc_type: 'measure'
+        data_type: 'number'
+        format {
+          type: 'number'
+          pattern: 'none'
+        }
+      }
+      filter {
+        field: r(ad_length_clipping_helper_v.frame_scope_campaign_id)
+        operator: 'is'
+        value: '10527'
+      }
+      filter {
+        field: r(flight_date_range_clipping_helper_v.frame_scope_campaign_id)
+        operator: 'is'
+        value: '10527'
+      }
+      filter {
+        field: r(data_pipeline_creative_city_mapping.frame_scope_campaign_id)
+        operator: 'is'
+        value: '10527'
+      }
+      filter {
+        field: r(attention_seconds_network.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      fields: [
+        VizFieldFull {
+          ref: r(attention_seconds.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(ad_length_clipping_helper_v.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(data_pipeline_properties.city)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(data_pipeline_creative_city_mapping.city)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_seconds.start_date_utc)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: 'average_of_attention_seconds_attention_second'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+        frozen_columns: 0
+      }
+    }
+  }
+  block v_ojy8: VizBlock {
+    label: 'Fixed'
+    viz: DataTable {
+      dataset: attention_network_remodeled
+      filter {
+        field: r(attention_network_remodeled, data_pipeline_attention_seconds_v2.is_in_campaign_flight_range)
+        operator: 'is'
+        value: true
+      }
+      filter {
+        field: r(data_pipeline_stg_campaigns.campaign_id)
+        operator: 'is'
+        value: '10527'
+      }
+      fields: [
+        VizFieldFull {
+          ref: r(data_pipeline_stg_campaigns.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(data_pipeline_attention_seconds_v2.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(data_pipeline_properties.city)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_network_remodeled.average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(data_pipeline_attention_seconds_v2.start_at_utc)
+          format {
+            type: 'datetime'
+          }
+          uname: 'data_pipeline_attention_seconds_v2_start_at_utc_1'
+        }
+      ]
+      settings {
+        show_row_number: true
+        sorts: [
+          SortSetting {
+            key: 'data_pipeline_attention_seconds_v2_start_at_utc_1'
+            direction: 'asc'
+          }
+        ]
+        row_limit: 5000
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block f_1jub: FilterBlock {
+    label: 'Campaign ID'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention_network_remodeled
+      field: r(data_pipeline_stg_campaigns.campaign_id)
+    }
+    default {
+      operator: 'is'
+      value: '10527'
+    }
+  }
+  block v_7tdu: VizBlock {
+    label: 'Date Range'
+    viz: DataTable {
+      dataset: attention_network_remodeled
+      fields: [
+        VizFieldFull {
+          ref: r(data_pipeline_stg_campaigns.start_date)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(data_pipeline_stg_campaigns.end_date)
+          format {
+            type: 'date'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+  block t_ls93: TextBlock {
+    content: @md
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 300" width="100%" height="300" role="img" aria-label="dbdiagram-style remodelled campaign-scope join diagram">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b" />
+    </marker>
+    <style>
+      .vc-join-title { font: 700 18px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #172033; }
+      .vc-join-note { font: 12px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #64748b; }
+      .vc-join-table-title { font: 700 12px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #ffffff; }
+      .vc-join-field { font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; fill: #263244; }
+      .vc-join-field-muted { font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; fill: #64748b; }
+      .vc-join-warning { font: 11px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #92400e; }
+      .vc-join-tag { font: 700 10px Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #475569; }
+      .vc-join-rel { stroke: #64748b; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .vc-join-dashed { stroke-dasharray: 5 5; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1218" height="298" rx="14" fill="#f8fbff" stroke="#d8e0ea" />
+  <text x="24" y="32" class="vc-join-title">Remodelled campaign-scope join</text>
+  <text x="24" y="54" class="vc-join-note">One Campaign ID filter targets stg_campaigns. Joins then carry campaign/ad scope to the fact table and lookup tables.</text>
+
+  <g transform="translate(24 82)">
+    <rect x="0" y="0" width="220" height="70" rx="9" fill="#eef2ff" stroke="#c7d2fe" />
+    <rect x="0" y="0" width="220" height="26" rx="9" fill="#4f46e5" />
+    <text x="12" y="18" class="vc-join-table-title">filter: campaign_id</text>
+    <text x="12" y="47" class="vc-join-field">campaign_id = 10527</text>
+  </g>
+
+  <g transform="translate(310 72)">
+    <rect x="0" y="0" width="270" height="132" rx="9" fill="#ffffff" stroke="#93c5fd" />
+    <rect x="0" y="0" width="270" height="28" rx="9" fill="#0284c7" />
+    <text x="12" y="19" class="vc-join-table-title">data_pipeline_stg_campaigns</text>
+    <text x="12" y="50" class="vc-join-field">campaign_id</text>
+    <text x="12" y="70" class="vc-join-field">ad_id</text>
+    <text x="12" y="90" class="vc-join-field">campaign_ad_key</text>
+    <text x="12" y="110" class="vc-join-field-muted">start_date, end_date</text>
+    <text x="12" y="128" class="vc-join-field-muted">ad_length_grouped</text>
+  </g>
+
+  <g transform="translate(690 32)">
+    <rect x="0" y="0" width="280" height="132" rx="9" fill="#ffffff" stroke="#86efac" />
+    <rect x="0" y="0" width="280" height="28" rx="9" fill="#16a34a" />
+    <text x="12" y="19" class="vc-join-table-title">data_pipeline_attention_seconds_v2</text>
+    <text x="12" y="50" class="vc-join-field">campaign_ad_key</text>
+    <text x="12" y="70" class="vc-join-field">property_id</text>
+    <text x="12" y="90" class="vc-join-field-muted">start_date_utc</text>
+    <text x="12" y="110" class="vc-join-field-muted">attention_seconds_true</text>
+    <text x="12" y="128" class="vc-join-field-muted">is_in_campaign_flight_range</text>
+  </g>
+
+  <g transform="translate(690 184)">
+    <rect x="0" y="0" width="280" height="96" rx="9" fill="#ffffff" stroke="#fbbf24" />
+    <rect x="0" y="0" width="280" height="28" rx="9" fill="#d97706" />
+    <text x="12" y="19" class="vc-join-table-title">creative_city_mapping</text>
+    <text x="12" y="50" class="vc-join-field">campaign_ad_key</text>
+    <text x="12" y="70" class="vc-join-field-muted">city</text>
+    <text x="12" y="88" class="vc-join-warning">scope metadata, not metric grouping</text>
+  </g>
+
+  <g transform="translate(1018 54)">
+    <rect x="0" y="0" width="154" height="88" rx="9" fill="#ffffff" stroke="#cbd5e1" />
+    <rect x="0" y="0" width="154" height="28" rx="9" fill="#64748b" />
+    <text x="12" y="19" class="vc-join-table-title">properties</text>
+    <text x="12" y="50" class="vc-join-field">property_id</text>
+    <text x="12" y="70" class="vc-join-field-muted">city</text>
+  </g>
+
+  <path class="vc-join-rel" d="M244 116 H310" />
+  <text x="258" y="105" class="vc-join-tag">filter</text>
+  <path class="vc-join-rel" d="M580 118 C628 118 640 98 690 98" />
+  <text x="596" y="102" class="vc-join-tag">campaign_ad_key</text>
+  <path class="vc-join-rel" d="M580 150 C628 150 640 224 690 224" />
+  <text x="600" y="206" class="vc-join-tag">campaign_ad_key</text>
+  <path class="vc-join-rel" d="M970 102 H1018" />
+  <text x="976" y="91" class="vc-join-tag">property_id</text>
+
+  <text x="1018" y="176" class="vc-join-note">Use properties.city</text>
+  <text x="1018" y="194" class="vc-join-note">for metric grouping</text>
+</svg>
+    ;;
+  }
+  block t_dbdiagram_embed: TextBlock {
+    content: @md <div style="height: 520px; border: 1px solid #d8e0ea; border-radius: 12px; overflow: hidden; background: #ffffff;">
+  <iframe
+    src="https://dbdiagram.io/e/6ab1ff8a9ba2420e18d97558/6ab1ffd19ba2420e18d979ba"
+    title="Attention network remodeled DBML diagram"
+    width="100%"
+    height="100%"
+    style="border: 0; display: block;"
+    loading="lazy"
+    referrerpolicy="no-referrer-when-downgrade"
+  ></iframe>
+</div>
+<div style="font-size: 12px; color: #64748b; margin-top: 8px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+  If the embed does not load, open the DBML diagram directly:
+  <a href="https://dbdiagram.io/e/6ab1ff8a9ba2420e18d97558/6ab1ffd19ba2420e18d979ba" target="_blank" rel="noopener noreferrer">dbdiagram.io/e/6ab1ff8a...</a>
+</div>;;
+  }
+
+  view: TabLayout {
+    label: 'View 1'
+    tab view_1: CanvasLayout {
+      label: 'Tab 1'
+      width: 1300
+      height: 1100
+      grid_size: 20
+      auto_expand_vertically: true
+      block v_8ahg {
+        position: pos(660, 80, 617, 120)
+        layer: 2
+      }
+      block v_rb6i {
+        position: pos(20, 220, 640, 420)
+        layer: 3
+      }
+      block v_n424 {
+        position: pos(20, 80, 640, 120)
+        layer: 4
+      }
+      block f_campaign_id {
+        position: pos(20, 20, 320, 60)
+        layer: 3
+      }
+      block v_rj50 {
+        position: pos(20, 660, 1260, 420)
+        layer: 2
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+    tab tab_z940: CanvasLayout {
+      label: 'Tab 2'
+      width: 1300
+      height: 1660
+      grid_size: 20
+      auto_expand_vertically: true
+      mobile {
+        mode: 'auto'
+      }
+      block v_ojy8 {
+        position: pos(20, 1220, 1260, 420)
+        layer: 1
+      }
+      block f_1jub {
+        position: pos(40, 1020, 300, 80)
+        layer: 1
+      }
+      block v_7tdu {
+        position: pos(340, 1020, 480, 120)
+        layer: 1
+      }
+      block t_ls93 {
+        position: pos(20, 600, 1260, 320)
+        layer: 1
+      }
+      block t_dbdiagram_embed {
+        position: pos(20, 20, 1260, 560)
+        layer: 1
+      }
+    }
+  }
+
+  theme: DynamicPageTheme {
+    light: H.themes.vanilla
+    dark: H.themes.charcoal
+  }
+  explicit_interactions: [
+    FilterInteraction {
+      from: 'f_campaign_id'
+      to: [
+        'v_8ahg'
+      ]
+      field: ref('ad_length_clipping_helper_v', 'frame_scope_campaign_id')
+    },
+    FilterInteraction {
+      from: 'f_campaign_id'
+      to: [
+        'v_rb6i'
+      ]
+      field: ref('data_pipeline_creative_city_mapping', 'frame_scope_campaign_id')
+    },
+    FilterInteraction {
+      from: 'f_campaign_id'
+      to: [
+        'v_n424',
+        'v_rj50'
+      ]
+      field: ref('flight_date_range_clipping_helper_v', 'frame_scope_campaign_id')
+    },
+    FilterInteraction {
+      from: 'f_1jub'
+      to: [
+        'v_ojy8',
+        'v_7tdu'
+      ]
+      field: ref('data_pipeline_stg_campaigns', 'campaign_id')
+    },
+    FilterInteraction {
+      from: 'v_8ahg'
+      to: [
+        'v_rb6i',
+        'v_n424',
+        'v_rj50'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_rb6i'
+      to: [
+        'v_8ahg',
+        'v_n424',
+        'v_rj50'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_n424'
+      to: [
+        'v_8ahg',
+        'v_rb6i',
+        'v_rj50'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_rj50'
+      to: [
+        'v_rb6i',
+        'v_n424',
+        'v_8ahg'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_ojy8'
+      to: [
+        'v_7tdu'
+      ]
+    },
+    FilterInteraction {
+      from: 'v_7tdu'
+      to: [
+        'v_ojy8'
+      ]
+    }
+  ]
+  settings {
+    autorun_on_open: true
+  }
+}

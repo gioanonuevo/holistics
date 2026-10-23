@@ -1,0 +1,144 @@
+Model vplus_flight_facts {
+  type: 'query'
+  label: 'V+ Flight Facts'
+  description: 'One row per flight from data_pipeline.raw_campaigns, the same source as the Looker flights / flights_summary views. raw_campaigns.id IS the attention-side campaign id (stg_campaigns.campaign_id, e.g. 10605), so no id mapping is needed. Carries the Looker contract logic per flight: contract cost = standard_price_cents, rate card value = actual_value_cents when present, else a per-ad-duration rate x max(booked, actual impressions). The dataset metrics sum these across the selected flights exactly like the Looker measures. Direct campaigns only; Programmatic selections (ad ids) have no flights.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    description: 'raw_campaigns.id as text = flight id in Looker flights_summary = attention campaign id.'
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension campaign_name {
+    label: 'Campaign Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_name }};;
+  }
+  dimension report_code {
+    label: 'Report Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.report_code }};;
+  }
+  dimension campaign_type {
+    label: 'Campaign Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_type }};;
+  }
+  dimension status {
+    label: 'Status'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.status }};;
+  }
+  dimension flight_start {
+    label: 'Flight Start'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.flight_start }};;
+  }
+  dimension flight_end {
+    label: 'Flight End'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.flight_end }};;
+  }
+  dimension duration_days {
+    label: 'Duration Days'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.duration_days }};;
+  }
+  dimension ad_duration {
+    label: 'Ad Duration'
+    type: 'number'
+    hidden: false
+    description: 'Ad length in seconds; drives the rate card rate.'
+    definition: @sql {{ #SOURCE.ad_duration }};;
+  }
+  dimension booked_impressions {
+    label: 'Booked Impressions'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.booked_impressions }};;
+  }
+  dimension actual_impressions {
+    label: 'Actual Impressions (flight)'
+    type: 'number'
+    hidden: false
+    description: 'raw_campaigns.actual_impressions, the Looker flights_summary actual impressions. Compare with served impressions from plays_summary.'
+    definition: @sql {{ #SOURCE.actual_impressions }};;
+  }
+  dimension contract_cost {
+    label: 'Contract Cost'
+    type: 'number'
+    hidden: false
+    description: 'standard_price_cents / 100 (Looker total_contract_cost_dollars per flight).'
+    definition: @sql {{ #SOURCE.contract_cost }};;
+  }
+  dimension rate {
+    label: 'Rate Card Rate (cents per 1000)'
+    type: 'number'
+    hidden: false
+    description: 'Looker flights_summary.rate: 5 s 700, 10 s 900, 15 s 1050, 30 s 1325, else 800.'
+    definition: @sql {{ #SOURCE.rate }};;
+  }
+  dimension actual_value {
+    label: 'Actual Value'
+    type: 'number'
+    hidden: false
+    description: 'actual_value_cents / 100 when the flight has one, else null.'
+    definition: @sql {{ #SOURCE.actual_value }};;
+  }
+  dimension booked_value {
+    label: 'Rate Card Value'
+    type: 'number'
+    hidden: false
+    description: 'Looker booked_value_dollars per flight: actual_value when present, else rate x max(booked, actual impressions) / 1000, in currency units. Summed it is the Total Contract Value of the Looker flights_summary.'
+    definition: @sql {{ #SOURCE.booked_value }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    WITH f AS (
+      SELECT
+        CAST(id AS STRING) AS campaign_id,
+        campaign_name,
+        report_code,
+        campaign_type,
+        status,
+        DATE(start_at) AS flight_start,
+        DATE(end_at) AS flight_end,
+        duration_days,
+        ad_duration,
+        booked_impressions,
+        actual_impressions,
+        standard_price_cents / 100.0 AS contract_cost,
+        actual_value_cents,
+        CASE
+          WHEN ad_duration = 5 THEN 700
+          WHEN ad_duration = 10 THEN 900
+          WHEN ad_duration = 15 THEN 1050
+          WHEN ad_duration = 30 THEN 1325
+          ELSE 800
+        END AS rate
+      FROM `data_pipeline.raw_campaigns`
+    )
+    SELECT
+      *,
+      actual_value_cents / 100.0 AS actual_value,
+      COALESCE(
+        actual_value_cents,
+        CASE
+          WHEN booked_impressions <= actual_impressions THEN rate * actual_impressions / 1000
+          ELSE rate * booked_impressions / 1000
+        END
+      ) / 100.0 AS booked_value
+    FROM f;;
+  models: [
+  ]
+}

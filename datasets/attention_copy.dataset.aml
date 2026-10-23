@@ -1,0 +1,265 @@
+@tag('Status/Draft')
+Dataset attention_copy {
+  label: 'Attention'
+  description: 'Attention facts on the attention_base query model. One selection value (campaign id for Direct, ad id for Programmatic) drives everything: bind the dashboard control to the attention_base.report_filter param, which clips attention_base to the matching flight window via an inner join on DATE(start_at_utc) inside the model (is_in_flight_range, selected_campaign_start_date, selected_campaign_end_date); add the viz condition filter_model.report_filter == (attention_base.report_filter | first()) so the same value flows through the network scope chain (data_pipeline_stg_campaigns -> campaign_network_scope_bridge_v2 -> network_scope_v2, city + grouped ad length). filter_model.report_option (id|flight_start|flight_end) is kept as an option for a literal {{ param }} clip if constant-bound partition pruning is ever needed.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  models: [
+    filter_model,
+    attention_base,
+    network_scope_v2,
+    campaign_network_scope_bridge_v2,
+    data_pipeline_stg_campaigns
+  ]
+
+  relationships: [
+    relationship(attention_base.network_scope_key > network_scope_v2.network_scope_key, true, direction: 'one_way'),
+    relationship(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id, false, direction: 'two_way'),
+    relationship(campaign_network_scope_bridge_v2.network_scope_key > network_scope_v2.network_scope_key, true, direction: 'two_way'),
+    relationship(campaign_network_scope_bridge_v2.ad_id > data_pipeline_stg_campaigns.ad_id, true, direction: 'two_way'),
+    relationship(data_pipeline_stg_campaigns.ad_id > filter_model.ad_id, true, direction: 'two_way')
+  ]
+
+  metric selected_campaign_start_date {
+    label: 'Selected Campaign Start Date'
+    type: 'date'
+    hidden: false
+    description: 'Earliest flight date of the report_filter selection (campaign id or ad id). Read through the campaign path so it is available even when the network scope is empty.'
+    definition: @aql
+      max(attention_base.selected_flight_start_date)
+      | with_relationships(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id)
+      | keep_grains(keep_filters: true)
+    ;;
+    format: 'LLL dd yyyy'
+  }
+
+  metric selected_campaign_end_date {
+    label: 'Selected Campaign End Date'
+    type: 'date'
+    hidden: false
+    description: 'Latest flight date of the report_filter selection (campaign id or ad id). Read through the campaign path so it is available even when the network scope is empty.'
+    definition: @aql
+      max(attention_base.selected_flight_end_date)
+      | with_relationships(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id)
+      | keep_grains(keep_filters: true)
+    ;;
+    format: 'LLL dd yyyy'
+  }
+
+  metric base_average_attention_seconds {
+    label: 'Base Average Attention Seconds'
+    type: 'number'
+    description: 'Reusable average over eligible attention events before campaign or network context is applied.'
+    definition: @aql
+      avg(attention_base.attention_seconds)
+      | where(
+          attention_base.ad_id is not null,
+          attention_base.attention_seconds is not null
+        )
+    ;;
+    format: 'none'
+  }
+
+  metric attention_seconds_average {
+    label: 'Average Attention Seconds'
+    type: 'number'
+    description: 'Average attention of the selected campaign/ad events at the current table grouping (per ad, city, gender, ...). This is the "attention" side of every vs Campaign / vs Network comparison. At campaign level it equals Campaign Average Attention Seconds.'
+    definition: @aql
+      base_average_attention_seconds
+      | with_relationships(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id)
+    ;;
+    format: 'none'
+  }
+
+  metric campaign_average_attention_seconds {
+    label: 'Campaign Average Attention Seconds'
+    type: 'number'
+    description: 'Average attention over ALL events of the current selection (one campaign id, or several ad ids that usually make up one campaign), ignoring any breakdown dimension of attention_base. Same number on every row of a per-ad, per-city or per-demographic table; the denominator of Attention vs Campaign Average.'
+    definition: @aql
+      attention_seconds_average
+      | of_all(attention_base, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric average_attention_seconds {
+    label: 'Network Average Attention Seconds'
+    type: 'number'
+    description: 'The same average over every eligible event in the selected campaign scope. Campaign identity is excluded from the metric grain while its filter is retained to derive that scope.'
+    definition: @aql
+      base_average_attention_seconds
+      | of_all(filter_model.report_filter, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric attention_events {
+    label: 'Network Attention Events'
+    type: 'number'
+    description: 'Count of network attention records at the same filter scope as Network Average Attention Seconds.'
+    definition: @aql
+      count(attention_base.uuid)
+      | where(
+          attention_base.ad_id is not null,
+          attention_base.attention_seconds is not null
+        )
+      | of_all(filter_model.report_filter, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  // ---------------------------------------------------------------------------
+  // Campaign-side metrics (the selected campaign or ad only, never the network)
+  // ---------------------------------------------------------------------------
+
+  metric campaign_datapoints {
+    label: 'Datapoints'
+    type: 'number'
+    description: 'Number of attention observation rows that belong to the selected campaign or ad inside its flight window (plain row count, like Looker attention_seconds_count; v3 rows are counted as they are). Equivalent of Total Observations in the client dashboard.'
+    definition: @aql
+      count(attention_base.uuid)
+      | where(
+          attention_base.ad_id is not null,
+          attention_base.attention_seconds is not null
+        )
+      | with_relationships(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id)
+    ;;
+    format: '#,###'
+  }
+
+  metric campaign_attention_seconds_sum {
+    label: 'Campaign Attention Seconds (Sum)'
+    type: 'number'
+    description: 'Sum of attention seconds over the selected campaign or ad events inside the flight window (campaign path). Together with Datapoints it lets an extract roll up exact weighted averages at any grain: sum / datapoints = Campaign Average Attention Seconds. Used by the V+ report extract.'
+    definition: @aql
+      sum(attention_base.attention_seconds)
+      | where(
+          attention_base.ad_id is not null,
+          attention_base.attention_seconds is not null
+        )
+      | with_relationships(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id)
+    ;;
+    format: '#,###.00'
+  }
+
+  // ---------------------------------------------------------------------------
+  // Comparisons: (attention - benchmark) / benchmark, as a ratio (format shows %)
+  // ---------------------------------------------------------------------------
+
+  metric attention_vs_campaign {
+    label: 'Attention vs Campaign Average'
+    type: 'number'
+    description: 'Relative difference between the row attention (Average Attention Seconds at the current breakdown) and Campaign Average Attention Seconds (the whole selection). Reads 0% at campaign level; use in per-creative, per-city or per-demographic tables.'
+    definition: @aql
+      safe_divide(
+        attention_seconds_average - campaign_average_attention_seconds,
+        campaign_average_attention_seconds
+      )
+    ;;
+    format: '0.0%'
+  }
+
+  metric network_average_overall {
+    label: 'Network Average Attention Seconds (Overall)'
+    type: 'number'
+    description: 'Network Average Attention Seconds as one number for the whole selection, ignoring any breakdown dimension of attention_base (ad, city, gender, ...). This is the Looker attention_network_average benchmark; the plain Network Average metric instead follows the table grouping.'
+    definition: @aql
+      average_attention_seconds
+      | of_all(attention_base, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric attention_vs_network {
+    label: 'Attention vs Network Average'
+    type: 'number'
+    description: 'Relative difference between the row attention (Average Attention Seconds at the current breakdown) and the overall network benchmark (Looker attention_network_average: plain average over the clipped network set, same cities and grouped ad lengths, same flight window). Works at campaign level and in per-creative or per-city tables.'
+    definition: @aql
+      safe_divide(
+        attention_seconds_average - network_average_overall,
+        network_average_overall
+      )
+    ;;
+    format: '0.0%'
+  }
+
+  // ---------------------------------------------------------------------------
+  // Demographic network benchmarks (Looker attention_network_gender/age/demo_average).
+  // Each pins the network average to the demographic grain, so in a table grouped by
+  // gender (or age, or both) every row is compared against the network average of the
+  // same demographic. Only meaningful when the table is grouped by that demographic.
+  // ---------------------------------------------------------------------------
+
+  metric network_average_by_gender {
+    label: 'Network Average Attention Seconds by Gender'
+    type: 'number'
+    description: 'Network Average Attention Seconds at gender grain (attention_network_gender_average). Use in tables grouped by attention_base.gender.'
+    definition: @aql
+      average_attention_seconds
+      | keep_grains(attention_base.gender, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric attention_vs_network_by_gender {
+    label: 'Attention vs Network Average by Gender'
+    type: 'number'
+    description: 'Selected campaign attention of the gender row versus the network average of the same gender. Use in tables grouped by attention_base.gender.'
+    definition: @aql
+      safe_divide(
+        attention_seconds_average - network_average_by_gender,
+        network_average_by_gender
+      )
+    ;;
+    format: '0.0%'
+  }
+
+  metric network_average_by_age_group {
+    label: 'Network Average Attention Seconds by Age Group'
+    type: 'number'
+    description: 'Network Average Attention Seconds at age-group grain (attention_network_age_average). Use in tables grouped by attention_base.age_group.'
+    definition: @aql
+      average_attention_seconds
+      | keep_grains(attention_base.age_group, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric attention_vs_network_by_age_group {
+    label: 'Attention vs Network Average by Age Group'
+    type: 'number'
+    description: 'Selected campaign attention of the age-group row versus the network average of the same age group. Use in tables grouped by attention_base.age_group.'
+    definition: @aql
+      safe_divide(
+        attention_seconds_average - network_average_by_age_group,
+        network_average_by_age_group
+      )
+    ;;
+    format: '0.0%'
+  }
+
+  metric network_average_by_gender_age {
+    label: 'Network Average Attention Seconds by Gender and Age'
+    type: 'number'
+    description: 'Network Average Attention Seconds at gender x age-group grain (attention_network_demo_average). Use in tables grouped by attention_base.gender and attention_base.age_group.'
+    definition: @aql
+      average_attention_seconds
+      | keep_grains(attention_base.gender, attention_base.age_group, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric attention_vs_network_by_gender_age {
+    label: 'Attention vs Network Average by Gender and Age'
+    type: 'number'
+    description: 'Selected campaign attention of the gender x age row versus the network average of the same gender x age bucket. Use in tables grouped by attention_base.gender and attention_base.age_group.'
+    definition: @aql
+      safe_divide(
+        attention_seconds_average - network_average_by_gender_age,
+        network_average_by_gender_age
+      )
+    ;;
+    format: '0.0%'
+  }
+}

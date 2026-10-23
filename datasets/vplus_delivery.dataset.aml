@@ -1,0 +1,106 @@
+@tag('Status/Draft')
+Dataset vplus_delivery {
+  label: 'V+ Delivery'
+  description: 'Delivery facts for the V+ post-report deck: flight facts from data_pipeline.raw_campaigns (the Looker flights / flights_summary source: booked and actual impressions, contract cost, rate card value, bonus, CPM, flight window) and served impressions from plays_summary clipped to the stg_campaigns flight window. Kept apart from the attention dataset so its single-path relationship design is untouched. Select a campaign id (Direct) on vplus_served_impressions.campaign_id, or ad ids (Programmatic) on vplus_served_impressions.ad_id. Bonus impressions = served - booked.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  models: [
+    vplus_flight_facts,
+    vplus_served_impressions,
+    data_pipeline_campaign_reporting_campaigns,
+    data_pipeline_elev8_ads_ads,
+    data_pipeline_raw_campaigns
+  ]
+
+  relationships: [
+    relationship(vplus_served_impressions.campaign_id > vplus_flight_facts.campaign_id, true, direction: 'two_way')
+  ]
+
+  // ---- Looker flights_summary measures, summed over the selected flights ----
+
+  metric booked_impressions {
+    label: 'Booked Impressions'
+    type: 'number'
+    description: 'Looker sum_of_booked_impressions: sum of flight booked_impressions.'
+    definition: @aql sum(vplus_flight_facts.booked_impressions);;
+    format: '#,###'
+  }
+
+  metric flight_actual_impressions {
+    label: 'Actual Impressions (flights)'
+    type: 'number'
+    description: 'Looker sum_of_actual_impressions: sum of raw_campaigns.actual_impressions. Kept for reconciliation against Served Impressions (plays_summary).'
+    definition: @aql sum(vplus_flight_facts.actual_impressions);;
+    format: '#,###'
+  }
+
+  metric served_impressions {
+    label: 'Served Impressions'
+    type: 'number'
+    description: 'Impressions actually served inside the flight window (plays_summary).'
+    definition: @aql sum(vplus_served_impressions.impressions);;
+    format: '#,###'
+  }
+
+  metric bonus_impressions {
+    label: 'Bonus Impressions'
+    type: 'number'
+    description: 'Served Impressions - Booked Impressions.'
+    definition: @aql served_impressions - booked_impressions;;
+    format: '#,###'
+  }
+
+  metric total_contract_cost {
+    label: 'Total Contract Cost'
+    type: 'number'
+    description: 'Looker total_contract_cost_dollars: sum(standard_price_cents) / 100.'
+    definition: @aql sum(vplus_flight_facts.contract_cost);;
+    format: '#,###.00'
+  }
+
+  metric rate_card_value {
+    label: 'Total Contract Value (Rate Card)'
+    type: 'number'
+    description: 'Looker booked_value_dollars: sum over flights of actual_value when present, else rate x max(booked, actual impressions) / 1000. The deck calls it Rate Card Value.'
+    definition: @aql sum(vplus_flight_facts.booked_value);;
+    format: '#,###.00'
+  }
+
+  metric bonus_value {
+    label: 'Bonus Value'
+    type: 'number'
+    description: 'Looker bonus_value_dollars: Total Contract Value - Total Contract Cost, floored at 0.'
+    definition: @aql case(when: rate_card_value > total_contract_cost, then: rate_card_value - total_contract_cost, else: 0);;
+    format: '#,###.00'
+  }
+
+  metric cpm {
+    label: 'CPM'
+    type: 'number'
+    description: 'Looker flights_summary.cpm: 0 when booked impressions are 0, else Total Contract Cost / (booked / 1000).'
+    definition: @aql coalesce(safe_divide(total_contract_cost, booked_impressions) * 1000, 0);;
+    format: '#,###.00'
+  }
+
+  metric flight_start {
+    label: 'Flight Start'
+    type: 'date'
+    description: 'Looker min_start.'
+    definition: @aql min(vplus_flight_facts.flight_start);;
+  }
+
+  metric flight_end {
+    label: 'Flight End'
+    type: 'date'
+    description: 'Looker max_end.'
+    definition: @aql max(vplus_flight_facts.flight_end);;
+  }
+
+  metric flight_count {
+    label: 'Flights'
+    type: 'number'
+    definition: @aql count(vplus_flight_facts.campaign_id);;
+    format: '#,###'
+  }
+}

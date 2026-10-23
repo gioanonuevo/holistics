@@ -1,0 +1,628 @@
+@tag('Status/Draft')
+Dashboard vplus_report_extract {
+  title: 'V+ Report Extract'
+  description: 'Source table for the automated V+ post-report deck. One wide table at day x ad x property attributes x screen location x demographic grain, with the governed campaign and network benchmarks broadcast onto every row, plus a one-row totals table for reconciliation. The deck pipeline exports v_report for the selected campaign id (Direct) or ad ids (Programmatic) and derives every slide from it.'
+  owner: 'ganonuevo@verticalcity.com'
+
+  // ---------------------------------------------------------------------------
+  // One control, sourced from the attention_base.report_filter PARAM. It takes one campaign id
+  // (Direct) or several ad ids (Programmatic). The param clips attention_base to the flight window;
+  // the block condition `filter_model.report_filter in attention_base.report_filter` carries the
+  // same values through the network scope chain. There is no empty-control fallback on purpose:
+  // the extract must always be scoped to a selection.
+  // ---------------------------------------------------------------------------
+  block f_report: FilterBlock {
+    label: 'Campaign ID (Direct) or Ad IDs (Programmatic)'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention
+      field: r(attention_base.report_filter)
+    }
+    default {
+      operator: 'is'
+      value: ['10605']
+    }
+    settings {
+      input_type: 'multiple'
+    }
+  }
+
+  block t_intro: TextBlock {
+    content: @md
+## V+ report extract
+
+**v_report** is the single source for the automated post-report deck. Each row is one bucket of the selected campaign's own events (`campaign_datapoints`, `campaign_attention_seconds_sum`) and carries the governed benchmarks as columns: the campaign average, the network average, and the network averages by gender, by age group and by gender x age. The pipeline exports this table and derives every slide (gender, age, city, province, FSA, property type, creatives, over time, top demographic) by summing `campaign_attention_seconds_sum / campaign_datapoints` at the grain it needs. Active attention is the share of rows whose exposure category is Message Exposure (2.5 s and above).
+
+**v_totals** is the reconciliation row: the pipeline asserts that its own roll-up of v_report equals these governed numbers before it builds anything.
+
+Validation baseline, campaign 10605: 32,156 datapoints, campaign average 5.199657, network average 5.233177, window Aug 12 to Oct 1 2026.
+    ;;
+  }
+
+  block v_totals: VizBlock {
+    label: 'Governed totals (reconciliation row)'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_attention_seconds_sum)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_screens)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_events)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_overall)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.selected_campaign_start_date)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.selected_campaign_end_date)
+          format {
+            type: 'date'
+          }
+        }
+      ]
+      settings {
+        show_row_number: false
+        row_limit: 100
+      }
+    }
+  }
+
+  block v_report: VizBlock {
+    label: 'Report extract (day x ad x property x screen location x demographic, with benchmarks)'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.start_date_local)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ad_id)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ads_type)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(creative_img.media_type)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(creative_img.creative_img)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.city)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(properties.address_province)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(properties.fsa)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(properties.property_type_broad)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(properties.property_type)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(screens.screen_location)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.gender)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.age_group)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.exposure_category)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_attention_seconds_sum)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_overall)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_gender)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_age_group)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_gender_age)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: false
+        row_limit: 500000
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Delivery facts from dataset vplus_delivery (flights + plays_summary), kept apart from the
+  // attention dataset. Same selection semantics: campaign id (Direct) or ad ids (Programmatic).
+  // ---------------------------------------------------------------------------
+  block f_delivery: FilterBlock {
+    label: 'Delivery: Campaign ID (Direct)'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: vplus_delivery
+      field: r(vplus_served_impressions.campaign_id)
+    }
+    default {
+      operator: 'is'
+      value: ['10605']
+    }
+    settings {
+      input_type: 'multiple'
+    }
+  }
+
+  block f_delivery_ads: FilterBlock {
+    label: 'Delivery: Ad IDs (Programmatic, optional)'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: vplus_delivery
+      field: r(vplus_served_impressions.ad_id)
+    }
+    settings {
+      input_type: 'multiple'
+    }
+  }
+
+  block v_delivery: VizBlock {
+    label: 'Campaign delivery (Looker flights_summary measures over the selected flights)'
+    viz: DataTable {
+      dataset: vplus_delivery
+      fields: [
+        VizFieldFull {
+          ref: r(vplus_delivery.flight_count)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.flight_start)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.flight_end)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.booked_impressions)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.flight_actual_impressions)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.served_impressions)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.bonus_impressions)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.total_contract_cost)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.rate_card_value)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.bonus_value)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.cpm)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+      ]
+      settings {
+        show_row_number: false
+        row_limit: 100
+      }
+    }
+  }
+
+  block v_flights: VizBlock {
+    label: 'Flights behind the selection (raw_campaigns rows)'
+    viz: DataTable {
+      dataset: vplus_delivery
+      fields: [
+        VizFieldFull {
+          ref: r(vplus_flight_facts.campaign_id)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.campaign_name)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.report_code)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.campaign_type)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.status)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.flight_start)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.flight_end)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.ad_duration)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.booked_impressions)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.actual_impressions)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.contract_cost)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.rate)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.actual_value)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_flight_facts.booked_value)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+      ]
+      settings {
+        show_row_number: false
+        row_limit: 1000
+      }
+    }
+  }
+
+  block v_served_by_ad: VizBlock {
+    label: 'Served impressions by ad (inside the flight window)'
+    viz: DataTable {
+      dataset: vplus_delivery
+      fields: [
+        VizFieldFull {
+          ref: r(vplus_served_impressions.campaign_id)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_served_impressions.ad_id)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_served_impressions.window_start)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_served_impressions.window_end)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.served_impressions)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+      ]
+      settings {
+        show_row_number: false
+        row_limit: 5000
+      }
+    }
+  }
+
+  view: CanvasLayout {
+    label: 'V+ Report Extract'
+    width: 1300
+    height: 2460
+    grid_size: 20
+    auto_expand_vertically: true
+    block t_intro {
+      position: pos(20, 20, 1260, 260)
+    }
+    block f_report {
+      position: pos(20, 300, 620, 80)
+    }
+    block v_totals {
+      position: pos(20, 400, 1260, 160)
+      layer: 1
+    }
+    block v_report {
+      position: pos(20, 580, 1260, 880)
+      layer: 1
+    }
+    block f_delivery {
+      position: pos(20, 1500, 620, 80)
+    }
+    block f_delivery_ads {
+      position: pos(660, 1500, 620, 80)
+    }
+    block v_delivery {
+      position: pos(20, 1600, 1260, 160)
+      layer: 1
+    }
+    block v_flights {
+      position: pos(20, 1780, 1260, 220)
+      layer: 1
+    }
+    block v_served_by_ad {
+      position: pos(20, 2020, 1260, 380)
+      layer: 1
+    }
+    mobile {
+      mode: 'auto'
+    }
+  }
+
+  theme: DynamicPageTheme {
+    light: H.themes.vanilla
+    dark: H.themes.charcoal
+  }
+  explicit_interactions: [
+    FilterInteraction {
+      from: 'f_report'
+      to: [
+        'v_totals',
+        'v_report'
+      ]
+      field: r(attention_base.report_filter)
+    },
+    FilterInteraction {
+      from: 'f_delivery'
+      to: [
+        'v_delivery',
+        'v_flights',
+        'v_served_by_ad'
+      ]
+      field: r(vplus_served_impressions.campaign_id)
+    },
+    FilterInteraction {
+      from: 'f_delivery_ads'
+      to: [
+        'v_delivery',
+        'v_flights',
+        'v_served_by_ad'
+      ]
+      field: r(vplus_served_impressions.ad_id)
+    }
+  ]
+}

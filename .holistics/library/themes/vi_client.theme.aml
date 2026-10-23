@@ -1,0 +1,315 @@
+// Vertical Impression — Client Reporting theme
+// Derived from Client Dashboard v2 (Dashboard_Template_v3.html):
+//   dark  = the on-screen theme  (:root tokens: --bg-deep #0a1e3d, --bg-primary #133256,
+//           --accent-teal #0eccc2, --accent-purple #6e4fc6, --text-secondary #97C7E2,
+//           Space Grotesk display / Inter body, 16px glass cards with hairline borders)
+//   light = the template's print variant (white page, #111c2e / #22415c text, #0a7d77 teal)
+
+const vi_client_brand = {
+  primary: "oklch(0.76 0.13 189)"
+  secondary: "oklch(0.52 0.18 291)"
+  font_body: "Inter"
+  font_display: "'Space Grotesk', Inter, sans-serif"
+  corner_style: "rounded"
+  density: "comfortable"
+  elevation: "hairline"
+
+  background_light: "oklch(0.97 0.008 240)"
+  background_dark: "oklch(0.24 0.065 259)"
+  canvas_bg_light: "oklch(0.98 0.006 240)"
+  canvas_bg_dark: "oklch(0.26 0.068 257)"
+  block_bg_light: "oklch(0.995 0.002 240)"
+  block_bg_dark: "oklch(0.31 0.074 254)"
+  text_primary_light: "oklch(0.23 0.04 260)"
+  text_primary_dark: "oklch(0.98 0.005 230)"
+  text_muted_light: "oklch(0.365 0.06 247)"
+  text_muted_dark: "oklch(0.805 0.063 233)"
+  text_subtle_light: "oklch(0.55 0.03 248)"
+  text_subtle_dark: "oklch(0.68 0.06 239)"
+  border_light: "oklch(0.88 0.012 248)"
+  border_dark: "oklch(0.37 0.072 252)"
+  focus_ring_light: "oklch(0.53 0.09 189)"
+  focus_ring_dark: "oklch(0.76 0.13 189)"
+  semantic_success_light: "oklch(0.45 0.11 131)"
+  semantic_success_dark: "oklch(0.85 0.19 129)"
+  semantic_warning_light: "oklch(0.555 0.146 49)"
+  semantic_warning_dark: "oklch(0.70 0.20 45)"
+  semantic_danger_light: "oklch(0.55 0.20 25)"
+  semantic_danger_dark: "oklch(0.64 0.21 25)"
+}
+
+ColorPalette vi_client_light_palette {
+  title: "VI Client Reporting Light"
+  categorical {
+    colors: [
+      "oklch(0.60 0.12 189)",
+      "oklch(0.55 0.18 291)",
+      "oklch(0.64 0.18 55)",
+      "oklch(0.58 0.11 240)",
+      "oklch(0.58 0.20 15)",
+      "oklch(0.60 0.16 135)",
+      "oklch(0.58 0.19 335)",
+      "oklch(0.66 0.14 95)"
+    ]
+  }
+}
+
+PageTheme vi_client_light_theme {
+  title: "VI Client Reporting Light"
+  color { data: vi_client_light_palette }
+  background { bg_color: vi_client_brand("background_light") }
+  canvas {
+    background { bg_color: vi_client_brand("canvas_bg_light") }
+    border {
+      border_width: 0
+      border_radius: 16
+      border_color: vi_client_brand("border_light")
+      border_style: "none"
+    }
+    shadow: "none"
+    opacity: 1
+  }
+  block {
+    background { bg_color: vi_client_brand("block_bg_light") }
+    border {
+      border_width: 1
+      border_style: "solid"
+      border_radius: 16
+      border_color: vi_client_brand("border_light")
+    }
+    shadow: "none"
+    padding: 16
+    opacity: 1
+    label {
+      font_family: vi_client_brand("font_display")
+      font_size: 14
+      font_color: vi_client_brand("text_primary_light")
+      font_weight: "semibold"
+      font_style: "normal"
+      letter_spacing: "0"
+    }
+    text {
+      font_family: vi_client_brand("font_body")
+      font_size: 13
+      font_color: vi_client_brand("text_muted_light")
+      font_weight: "normal"
+      font_style: "normal"
+    }
+  }
+  viz {
+    table {
+      general {
+        bg_color: vi_client_brand("block_bg_light")
+        font_color: vi_client_brand("text_muted_light")
+        font_family: vi_client_brand("font_body")
+        font_size: 13
+        border_color: vi_client_brand("border_light")
+        grid_color: vi_client_brand("border_light")
+        border_width: 1
+        hover_color: "oklch(0.965 0.012 240)"
+        banding_color: "oklch(0.98 0.006 240)"
+        cell_padding: DetailedSpacing { top: 10, right: 16, bottom: 10, left: 16 }
+        borders { outer: true, vertical: false, horizontal: true, header: true, row_header: false }
+      }
+      header {
+        bg_color: vi_client_brand("background_light")
+        font_color: vi_client_brand("text_primary_light")
+        font_size: 13
+        font_weight: "semibold"
+      }
+      sub_header {
+        bg_color: "oklch(0.98 0.006 240)"
+        font_color: vi_client_brand("text_muted_light")
+        font_size: 13
+        font_weight: "medium"
+      }
+      sub_title {
+        font_color: vi_client_brand("text_subtle_light")
+        font_size: 12
+        font_weight: "medium"
+      }
+      sparkline {
+        line { color: vi_client_brand("primary") }
+        column { color: vi_client_brand("primary") }
+      }
+    }
+    metric_kpi {
+      alignment: "left"
+      label {
+        font_family: vi_client_brand("font_body")
+        font_size: 20
+        font_color: vi_client_brand("text_muted_light")
+      }
+      value {
+        font_family: vi_client_brand("font_display")
+        font_size: 48
+        font_color: vi_client_brand("text_primary_light")
+      }
+      progress {
+        indicator { bg_color: vi_client_brand("primary") }
+        track { bg_color: vi_client_brand("border_light") }
+        text { font_color: vi_client_brand("text_muted_light") }
+      }
+      trend {
+        positive { text { font_color: vi_client_brand("semantic_success_light") font_weight: "medium" }  background { bg_color: "oklch(0.93 0.05 135)" } }
+        negative { text { font_color: vi_client_brand("semantic_danger_light") font_weight: "medium" }  background { bg_color: "oklch(0.93 0.04 20)" } }
+        neutral  { text { font_color: vi_client_brand("text_muted_light") font_weight: "normal" }  background { bg_color: "oklch(0.94 0.01 240)" } }
+      }
+    }
+  }
+  custom_css: @css
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+    .dac-text-block {
+      font-family: Inter;
+      font-size: 14px;
+      color: oklch(0.365 0.06 247);
+      line-height: 1.6;
+    }
+    .dac-text-block h1, .dac-text-block h2, .dac-text-block h3, .dac-text-block h4, .dac-text-block h5, .dac-text-block h6 {
+      font-family: 'Space Grotesk', Inter, sans-serif;
+      color: oklch(0.23 0.04 260);
+      line-height: 1.3;
+      margin-top: 0;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+    }
+  ;;
+}
+
+ColorPalette vi_client_dark_palette {
+  title: "VI Client Reporting Dark"
+  categorical {
+    colors: [
+      "oklch(0.74 0.13 189)",
+      "oklch(0.66 0.16 291)",
+      "oklch(0.73 0.18 55)",
+      "oklch(0.74 0.10 233)",
+      "oklch(0.66 0.20 15)",
+      "oklch(0.75 0.17 135)",
+      "oklch(0.68 0.17 335)",
+      "oklch(0.74 0.14 95)"
+    ]
+  }
+}
+
+PageTheme vi_client_dark_theme {
+  title: "VI Client Reporting Dark"
+  color { data: vi_client_dark_palette }
+  background { bg_color: vi_client_brand("background_dark") }
+  canvas {
+    background { bg_color: vi_client_brand("canvas_bg_dark") }
+    border {
+      border_width: 0
+      border_radius: 16
+      border_color: vi_client_brand("border_dark")
+      border_style: "none"
+    }
+    shadow: "none"
+    opacity: 1
+  }
+  block {
+    background { bg_color: vi_client_brand("block_bg_dark") }
+    border {
+      border_width: 1
+      border_style: "solid"
+      border_radius: 16
+      border_color: vi_client_brand("border_dark")
+    }
+    shadow: "none"
+    padding: 16
+    opacity: 1
+    label {
+      font_family: vi_client_brand("font_display")
+      font_size: 14
+      font_color: vi_client_brand("text_primary_dark")
+      font_weight: "semibold"
+      font_style: "normal"
+      letter_spacing: "0"
+    }
+    text {
+      font_family: vi_client_brand("font_body")
+      font_size: 13
+      font_color: vi_client_brand("text_muted_dark")
+      font_weight: "normal"
+      font_style: "normal"
+    }
+  }
+  viz {
+    table {
+      general {
+        bg_color: vi_client_brand("block_bg_dark")
+        font_color: vi_client_brand("text_muted_dark")
+        font_family: vi_client_brand("font_body")
+        font_size: 13
+        border_color: vi_client_brand("border_dark")
+        grid_color: vi_client_brand("border_dark")
+        border_width: 1
+        hover_color: "oklch(0.36 0.074 254)"
+        banding_color: "oklch(0.34 0.074 254)"
+        cell_padding: DetailedSpacing { top: 10, right: 16, bottom: 10, left: 16 }
+        borders { outer: true, vertical: false, horizontal: true, header: true, row_header: false }
+      }
+      header {
+        bg_color: vi_client_brand("background_dark")
+        font_color: vi_client_brand("text_primary_dark")
+        font_size: 13
+        font_weight: "semibold"
+      }
+      sub_header {
+        bg_color: "oklch(0.34 0.074 254)"
+        font_color: vi_client_brand("text_muted_dark")
+        font_size: 13
+        font_weight: "medium"
+      }
+      sub_title {
+        font_color: vi_client_brand("text_subtle_dark")
+        font_size: 12
+        font_weight: "medium"
+      }
+      sparkline {
+        line { color: vi_client_brand("primary") }
+        column { color: vi_client_brand("primary") }
+      }
+    }
+    metric_kpi {
+      alignment: "left"
+      label {
+        font_family: vi_client_brand("font_body")
+        font_size: 20
+        font_color: vi_client_brand("text_muted_dark")
+      }
+      value {
+        font_family: vi_client_brand("font_display")
+        font_size: 48
+        font_color: vi_client_brand("text_primary_dark")
+      }
+      progress {
+        indicator { bg_color: vi_client_brand("primary") }
+        track { bg_color: vi_client_brand("border_dark") }
+        text { font_color: vi_client_brand("text_muted_dark") }
+      }
+      trend {
+        positive { text { font_color: vi_client_brand("semantic_success_dark") font_weight: "medium" }  background { bg_color: "oklch(0.40 0.07 135)" } }
+        negative { text { font_color: vi_client_brand("semantic_danger_dark") font_weight: "medium" }  background { bg_color: "oklch(0.40 0.08 20)" } }
+        neutral  { text { font_color: vi_client_brand("text_muted_dark") font_weight: "normal" }  background { bg_color: "oklch(0.38 0.05 250)" } }
+      }
+    }
+  }
+  custom_css: @css
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+    .dac-text-block {
+      font-family: Inter;
+      font-size: 14px;
+      color: oklch(0.805 0.063 233);
+      line-height: 1.6;
+    }
+    .dac-text-block h1, .dac-text-block h2, .dac-text-block h3, .dac-text-block h4, .dac-text-block h5, .dac-text-block h6 {
+      font-family: 'Space Grotesk', Inter, sans-serif;
+      color: oklch(0.98 0.005 230);
+      line-height: 1.3;
+      margin-top: 0;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+    }
+  ;;
+}

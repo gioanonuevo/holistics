@@ -1,0 +1,58 @@
+Dashboard first_dashboard {
+  title: 'Your first Dashboard'
+  description: ''
+  owner: 'ganonuevo@verticalcity.com'
+  block title: TextBlock {
+    content: @md #TEST VC DASH;;
+  }
+  block v_mjxg: VizBlock {
+    label: 'Average Attention Seconds by Ad Id'
+    viz: ColumnChart {
+      dataset: attention
+      x_axis: VizFieldFull {
+        ref: r(data_pipeline_attention_seconds.ad_id)
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        series {
+          field: VizFieldFull {
+            ref: r(attention.average_attention_seconds)
+            format {
+              type: 'number'
+              pattern: 'inherited'
+            }
+          }
+        }
+      }
+      settings {
+        row_limit: 5000
+        x_axis_show_null_datetime: false
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+
+  view: CanvasLayout {
+    label: 'View 1'
+    width: 1300
+    height: 800
+    grid_size: 20
+    auto_expand_vertically: true
+    block title {
+      position: pos(20, 20, 1260, 60)
+    }
+    block v_mjxg {
+      position: pos(20, 100, 620, 420)
+    }
+    mobile {
+      mode: 'auto'
+    }
+  }
+
+  theme: H.themes.vanilla
+}

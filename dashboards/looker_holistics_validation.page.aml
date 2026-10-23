@@ -1,12 +1,15 @@
 Dashboard looker_holistics_validation {
   title: 'Looker Holistics Validation'
-  description: ''
+  description: 'Validation of the attention dataset against Looker. Tab 1: Direct campaign 10605 (baseline campaign 5.1997 / network 5.2332). Tab 2: six Programmatic ad ids selected together.'
   owner: 'ganonuevo@verticalcity.com'
-  block title: TextBlock {
-    content: @md # Your title goes here ;;
-  }
+
+  // ---------------------------------------------------------------------------
+  // Controls. Both are sourced from the attention_base.report_filter PARAM (a param-sourced
+  // control is the only way a value reaches a {% filter %} in the model SQL). Tab 1 takes one
+  // value, tab 2 takes several. Each control is wired only to the blocks of its own tab.
+  // ---------------------------------------------------------------------------
   block f_report: FilterBlock {
-    label: 'Campaign ID or Ad ID'
+    label: 'Campaign ID or Ad ID (single)'
     type: 'field'
     source: FieldFilterSource {
       dataset: attention
@@ -20,8 +23,57 @@ Dashboard looker_holistics_validation {
       input_type: 'single'
     }
   }
-  block v_yjz9: VizBlock {
-    label: 'Base Average Attention Seconds, Campaign Average Attention Seconds and 2 more'
+
+  block f_ads: FilterBlock {
+    label: 'Ad IDs (multiple)'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention
+      field: r(attention_base.report_filter)
+    }
+    default {
+      operator: 'is'
+      value: [
+        '69d6b7f1dd289cab8bbe075a',
+        '69d6b809dd289cab8bbe075f',
+        '6a03890a61b5f9ea1e4f40a6',
+        '6a03890a61b5f9ea1e4f40a7',
+        '6a03890a61b5f9ea1e4f40a8',
+        '6a03890a61b5f9ea1e4f40a9'
+      ]
+    }
+    settings {
+      input_type: 'multiple'
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Explanations
+  // ---------------------------------------------------------------------------
+  block t_intro: TextBlock {
+    content: @md
+## How this dataset works
+
+1. **One control, one param.** The control writes `attention_base.report_filter` (a campaign id for Direct, an ad id for Programmatic). Inside `attention_base` the param selects the matching rows of `stg_campaigns`, takes their min/max flight dates, expands them to one row per date and **inner-joins them on `DATE(start_at_utc)`** directly on the partitioned table. Rows outside the window never leave the model (`is_in_flight_range` is true for every surviving row).
+2. **Network scope.** Every block carries the AQL condition `filter_model.report_filter == coalesce(param | first(), '__all__') or ... == '__all__'` (tab 2 uses `in`). It filters `filter_model`, and the filter flows `filter_model -> stg_campaigns -> campaign_network_scope_bridge_v2 -> network_scope_v2 -> attention_base`: all events in the same cities and grouped ad lengths as the selection, from any campaign. With the control empty the sentinel keeps every row.
+3. **Campaign vs network.** `average_attention_seconds` / `attention_events` are the network (campaign identity excluded from the grain, filter kept). `campaign_average_attention_seconds` / `campaign_datapoints` activate the inactive relationship `attention_base.ad_id > stg_campaigns.ad_id` with `with_relationships()` so only the selection's own events count.
+4. **Comparisons.** `attention_vs_campaign` = row attention vs the whole selection (`of_all(attention_base)`); `attention_vs_network` = row attention vs the single-number network average (Looker `attention_network_average`). The gender / age / gender x age variants pin the network average to that demographic with `keep_grains()` and are only meaningful in tables grouped by it.
+    ;;
+  }
+
+  block t_prog: TextBlock {
+    content: @md
+## Programmatic test
+
+Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_mapping` these rows have a **null campaign_id**, so the v2 bridge join had to be made null-safe for them to get a network scope at all. The flight window is the min/max envelope across all six ads. The block condition is `filter_model.report_filter in attention_base.report_filter` (no empty-control fallback on this tab).
+    ;;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tab 1 blocks (Direct 10605)
+  // ---------------------------------------------------------------------------
+  block v_summary: VizBlock {
+    label: 'Campaign level'
     viz: DataTable {
       dataset: attention
       filter {
@@ -34,12 +86,18 @@ Dashboard looker_holistics_validation {
       ]
       fields: [
         VizFieldFull {
-          ref: r(attention.base_average_attention_seconds)
+          ref: r(attention.campaign_datapoints)
           format {
             type: 'number'
             pattern: 'inherited'
           }
-          uname: 'custom_base_average_attention_seconds'
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
         },
         VizFieldFull {
           ref: r(attention.campaign_average_attention_seconds)
@@ -47,7 +105,6 @@ Dashboard looker_holistics_validation {
             type: 'number'
             pattern: 'inherited'
           }
-          uname: 'custom_campaign_average_attention_seconds'
         },
         VizFieldFull {
           ref: r(attention.average_attention_seconds)
@@ -55,10 +112,356 @@ Dashboard looker_holistics_validation {
             type: 'number'
             pattern: 'inherited'
           }
-          uname: 'custom_average_attention_seconds'
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_overall)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
         },
         VizFieldFull {
           ref: r(attention.attention_events)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.selected_campaign_start_date)
+          format {
+            type: 'date'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.selected_campaign_end_date)
+          format {
+            type: 'date'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+      }
+    }
+  }
+
+  block v_gender: VizBlock {
+    label: 'By gender (network benchmark per gender)'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        "filter_model.report_filter == coalesce((attention_base.report_filter | first()), '__all__') or coalesce((attention_base.report_filter | first()), '__all__') == '__all__'"
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.gender)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_gender)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network_by_gender)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+      }
+    }
+  }
+
+  block v_gender_age: VizBlock {
+    label: 'By gender x age group (network benchmark per bucket and per age group)'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        "filter_model.report_filter == coalesce((attention_base.report_filter | first()), '__all__') or coalesce((attention_base.report_filter | first()), '__all__') == '__all__'"
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.gender)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.age_group)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_gender_age)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network_by_gender_age)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_age_group)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network_by_age_group)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+      }
+    }
+  }
+
+  block v_ads: VizBlock {
+    label: 'By ad (creative)'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        "filter_model.report_filter == coalesce((attention_base.report_filter | first()), '__all__') or coalesce((attention_base.report_filter | first()), '__all__') == '__all__'"
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.ad_id)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ads_type)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+      }
+    }
+  }
+  block p_summary: VizBlock {
+    label: 'Selection level (six ads)'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_overall)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+          uname: 'custom_network_average_overall'
+        },
+        VizFieldFull {
+          ref: r(attention.attention_events)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
           format {
             type: 'number'
             pattern: 'inherited'
@@ -86,40 +489,291 @@ Dashboard looker_holistics_validation {
         }
         column_styles: [
           ColumnStyle {
-            key: 'custom_base_average_attention_seconds'
-            width: 163
-          },
-          ColumnStyle {
-            key: 'custom_campaign_average_attention_seconds'
-            width: 174
-          },
-          ColumnStyle {
-            key: 'custom_average_attention_seconds'
-            width: 180
+            key: 'custom_network_average_overall'
+            width: 211
           }
         ]
       }
     }
   }
 
-  view: CanvasLayout {
-    label: 'View 1'
-    width: 1300
-    height: 800
-    grid_size: 20
-    auto_expand_vertically: true
-    block title {
-      position: pos(20, 20, 1260, 60)
+  block p_ads: VizBlock {
+    label: 'By ad'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.ad_id)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+      }
     }
-    block f_report {
-      position: pos(20, 100, 620, 80)
+  }
+
+  block p_gender: VizBlock {
+    label: 'By gender'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.gender)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_gender)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network_by_gender)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+      }
     }
-    block v_yjz9 {
-      position: pos(20, 200, 620, 420)
-      layer: 1
+  }
+
+  block p_gender_age: VizBlock {
+    label: 'By gender x age group'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.gender)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.age_group)
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_gender_age)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network_by_gender_age)
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 5000
+      }
     }
-    mobile {
-      mode: 'auto'
+  }
+
+  view: TabLayout {
+    tab direct: CanvasLayout {
+      label: 'Direct 10605'
+      width: 1300
+      height: 2200
+      grid_size: 20
+      auto_expand_vertically: true
+      block t_intro {
+        position: pos(20, 20, 1260, 420)
+      }
+      block f_report {
+        position: pos(20, 460, 620, 80)
+      }
+      block v_summary {
+        position: pos(20, 560, 1260, 240)
+        layer: 1
+      }
+      block v_ads {
+        position: pos(20, 820, 1260, 520)
+        layer: 1
+      }
+      block v_gender {
+        position: pos(20, 1360, 1260, 220)
+        layer: 1
+      }
+      block v_gender_age {
+        position: pos(20, 1600, 1260, 480)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+    tab programmatic: CanvasLayout {
+      label: 'Programmatic ads'
+      width: 1300
+      height: 1800
+      grid_size: 20
+      auto_expand_vertically: true
+      block t_prog {
+        position: pos(20, 20, 1260, 180)
+      }
+      block f_ads {
+        position: pos(20, 220, 1260, 80)
+      }
+      block p_summary {
+        position: pos(20, 320, 1260, 240)
+        layer: 1
+      }
+      block p_ads {
+        position: pos(20, 580, 1260, 320)
+        layer: 1
+      }
+      block p_gender {
+        position: pos(20, 920, 1260, 220)
+        layer: 1
+      }
+      block p_gender_age {
+        position: pos(20, 1160, 1260, 480)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
     }
   }
 
@@ -131,7 +785,20 @@ Dashboard looker_holistics_validation {
     FilterInteraction {
       from: 'f_report'
       to: [
-        'v_yjz9'
+        'v_summary',
+        'v_ads',
+        'v_gender',
+        'v_gender_age'
+      ]
+      field: r(attention_base.report_filter)
+    },
+    FilterInteraction {
+      from: 'f_ads'
+      to: [
+        'p_summary',
+        'p_ads',
+        'p_gender',
+        'p_gender_age'
       ]
       field: r(attention_base.report_filter)
     }

@@ -1,0 +1,69 @@
+Model data_pipeline_elev8_ads_ads {
+  type: 'table'
+  label: 'Elev8 Ads Ads'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension flight_id {
+    label: 'Flight Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.flight_id }};;
+  }
+  dimension name {
+    label: 'Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.name }};;
+  }
+  dimension start_at {
+    label: 'Start At'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_at }};;
+  }
+  dimension end_at {
+    label: 'End At'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.end_at }};;
+  }
+  dimension type {
+    label: 'Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.type }};;
+  }
+  dimension created_at {
+    label: 'Created At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.created_at }};;
+  }
+  dimension updated_at {
+    label: 'Updated At'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.updated_at }};;
+  }
+  dimension ad_number {
+    label: 'Ad Number'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_number }};;
+  }
+  dimension currency_code {
+    label: 'Currency Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.currency_code }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`elev8_ads_ads`'
+}

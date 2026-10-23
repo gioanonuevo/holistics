@@ -18,7 +18,8 @@ Model network_scope_v2 {
         end as ad_length_grouped
     from `data_pipeline.stg_campaigns` as campaigns
     inner join `data_pipeline.creative_city_mapping` as mapping
-      on campaigns.campaign_id = mapping.campaign_id
+      -- null-safe: Programmatic rows carry a null campaign_id on both sides
+      on coalesce(cast(campaigns.campaign_id as string), '') = coalesce(cast(mapping.campaign_id as string), '')
       and campaigns.ad_id = mapping.ad_id
     inner join `data_pipeline.properties` as properties
       on mapping.city = properties.city

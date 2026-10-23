@@ -20,7 +20,8 @@ Model campaign_network_scope_bridge_v2 {
         end as ad_length_grouped
     from `data_pipeline.stg_campaigns` as campaigns
     inner join `data_pipeline.creative_city_mapping` as mapping
-      on campaigns.campaign_id = mapping.campaign_id
+      -- null-safe: Programmatic rows carry a null campaign_id on both sides
+      on coalesce(cast(campaigns.campaign_id as string), '') = coalesce(cast(mapping.campaign_id as string), '')
       and campaigns.ad_id = mapping.ad_id
     inner join `data_pipeline.properties` as properties
       on mapping.city = properties.city
@@ -31,7 +32,7 @@ Model campaign_network_scope_bridge_v2 {
     type: 'text'
     hidden: true
     primary_key: true
-    definition: @sql concat({{ campaign_id }}, '||', {{ network_scope_key }}) ;;
+    definition: @sql concat(coalesce({{ campaign_id }}, ''), '||', {{ ad_id }}, '||', {{ network_scope_key }}) ;;
   }
 
   dimension network_scope_key {

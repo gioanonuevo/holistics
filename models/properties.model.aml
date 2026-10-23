@@ -1,0 +1,108 @@
+Model properties {
+  type: 'query'
+  label: 'Properties'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension id {
+    label: 'Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.id }};;
+  }
+  dimension name {
+    label: 'Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.name }};;
+  }
+  dimension address_province {
+    label: 'Address Province'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.address_province }};;
+  }
+  dimension address_city {
+    label: 'Address City'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.address_city }};;
+  }
+  dimension property_type {
+    label: 'Property Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_type }};;
+  }
+  dimension property_type_broad {
+    label: 'Property Type (Broad)'
+    type: 'text'
+    hidden: false
+    description: 'Residential when the granular type is Condo or Luxury Rental, otherwise Commercial (client dashboard property_type_2 / deck Property Type 1).'
+    definition: @sql case when {{ #SOURCE.property_type }} in ('Condo', 'Luxury Rental') then 'Residential' else 'Commercial' end;;
+  }
+  dimension floors {
+    label: 'Floors'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.floors }};;
+  }
+  dimension address_country {
+    label: 'Address Country'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.address_country }};;
+  }
+  dimension fsa {
+    label: 'Fsa'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.FSA }};;
+  }
+  dimension latitude {
+    label: 'Latitude'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.latitude }};;
+  }
+  dimension longitude {
+    label: 'Longitude'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.longitude }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    select
+        property_number as id,
+        name,
+        case
+        when region = 'Alberta' then 'AB'
+        when region = 'British Columbia' then 'BC'
+        when region = 'Newfoundland and Labrador' then 'NL'
+        when region = 'Ontario' then 'ON'
+        when region = 'Québec' then 'QC'
+        when region = 'Manitoba' then 'MB'
+        when region = 'Saskatchewan'then 'SK'
+        when region = 'Nova Scotia' then 'NS'
+        when region = 'Northwest Territories' then 'NT'
+        when region = 'Yukon' then 'YT'
+        else region end as address_province,
+        city as address_city,
+        string_field_1 as property_type,
+        no_of_floors as floors,
+        country as address_country,
+        SUBSTR(postal_code,0,3) as FSA,
+        latitude,
+        longitude,
+        from `data_pipeline.properties`
+        left join
+        `data_pipeline.iab_lookup_canada`
+        ON string_field_0 = property_type
+        where
+        country = 'Canada'
+        and test = false
+        and is_deleted = false;;
+  models: [
+  ]
+}

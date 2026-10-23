@@ -1,0 +1,55 @@
+Model screens {
+  type: 'query'
+  label: 'Screens'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension id {
+    label: 'Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.id }};;
+  }
+  dimension screen_name {
+    label: 'Screen Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.screen_name }};;
+  }
+  dimension mac_address {
+    label: 'Mac Address'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.mac_address }};;
+  }
+  dimension property_id {
+    label: 'Property Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension screen_location {
+    label: 'Screen Location'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.screen_location }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    select
+          a.id,
+          screen_name,
+          REPLACE(mac_address,':','-') as mac_address,
+          property_number as property_id,
+          case when lower(screen_name) like "%lobby%" then "Lobby"
+          when lower(location) like "%lobby%" then "Lobby"
+          else "Elevator"
+          end as screen_location from `data_pipeline.screens` a
+          left join `data_pipeline.properties` b
+          on  a.property_id = b.id
+          where a.mac_address is not null
+          -- one row per MAC so the join from attention_base.device_id cannot fan out
+          qualify row_number() over (partition by REPLACE(a.mac_address,':','-') order by a.last_seen_at desc, a.id desc) = 1;;
+  models: [
+  ]
+}

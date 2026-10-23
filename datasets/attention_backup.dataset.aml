@@ -1,0 +1,92 @@
+@tag('Status/Draft')
+Dataset attention_copy {
+  label: 'Attention'
+  description: 'Attention facts on the attention_base query model. One selection value (campaign id for Direct, ad id for Programmatic) drives everything: bind the dashboard control to the attention_base.report_filter param, which clips attention_base to the matching flight window via an inner join on DATE(start_at_utc) inside the model (is_in_flight_range, selected_campaign_start_date, selected_campaign_end_date); add the viz condition filter_model.report_filter == (attention_base.report_filter | first()) so the same value flows through the network scope chain (data_pipeline_stg_campaigns -> campaign_network_scope_bridge_v2 -> network_scope_v2, city + grouped ad length). filter_model.report_option (id|flight_start|flight_end) is kept as an option for a literal {{ param }} clip if constant-bound partition pruning is ever needed.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  models: [
+    filter_model,
+    attention_base,
+    network_scope_v2,
+    campaign_network_scope_bridge_v2,
+    data_pipeline_stg_campaigns
+  ]
+
+  relationships: [
+    relationship(attention_base.network_scope_key > network_scope_v2.network_scope_key, true, direction: 'one_way'),
+    relationship(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id, false, direction: 'two_way'),
+    relationship(campaign_network_scope_bridge_v2.network_scope_key > network_scope_v2.network_scope_key, true, direction: 'two_way'),
+    relationship(campaign_network_scope_bridge_v2.ad_id > data_pipeline_stg_campaigns.ad_id, true, direction: 'two_way'),
+    relationship(data_pipeline_stg_campaigns.ad_id > filter_model.ad_id, true, direction: 'two_way')
+  ]
+
+  metric selected_campaign_start_date {
+    label: 'Selected Campaign Start Date'
+    type: 'date'
+    hidden: false
+    description: 'Earliest flight date of the report_filter selection (campaign id or ad id).'
+    definition: @aql max(attention_base.selected_flight_start_date) | keep_grains(keep_filters: true);;
+    format: 'LLL dd yyyy'
+  }
+
+  metric selected_campaign_end_date {
+    label: 'Selected Campaign End Date'
+    type: 'date'
+    hidden: false
+    description: 'Latest flight date of the report_filter selection (campaign id or ad id).'
+    definition: @aql max(attention_base.selected_flight_end_date) | keep_grains(keep_filters: true);;
+    format: 'LLL dd yyyy'
+  }
+
+  metric base_average_attention_seconds {
+    label: 'Base Average Attention Seconds'
+    type: 'number'
+    description: 'Reusable average over eligible attention events before campaign or network context is applied.'
+    definition: @aql
+      avg(attention_base.attention_seconds)
+      | where(
+          attention_base.ad_id is not null,
+          attention_base.attention_seconds is not null
+        )
+    ;;
+    format: 'none'
+  }
+
+  metric campaign_average_attention_seconds {
+    label: 'Campaign Average Attention Seconds'
+    type: 'number'
+    description: 'Average attention for events belonging directly to the selected campaign, using the same eligibility filters as the network average.'
+    definition: @aql
+      base_average_attention_seconds
+      | with_relationships(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id)
+    ;;
+    format: 'none'
+  }
+
+  metric average_attention_seconds {
+    label: 'Network Average Attention Seconds'
+    type: 'number'
+    description: 'The same average over every eligible event in the selected campaign scope. Campaign identity is excluded from the metric grain while its filter is retained to derive that scope.'
+    definition: @aql
+      base_average_attention_seconds
+      | of_all(filter_model.report_filter, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric attention_events {
+    label: 'Network Attention Events'
+    type: 'number'
+    description: 'Count of network attention records at the same filter scope as Network Average Attention Seconds.'
+    definition: @aql
+      count(attention_base.uuid)
+      | where(
+          attention_base.ad_id is not null,
+          attention_base.attention_seconds is not null
+        )
+      | of_all(filter_model.report_filter, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+}

@@ -1,0 +1,89 @@
+Model vplus_served_impressions {
+  type: 'query'
+  label: 'V+ Served Impressions'
+  description: 'Served impressions from data_pipeline.plays_summary, one row per campaign x ad x date, clipped to the flight window of that campaign/ad pair in data_pipeline.stg_campaigns (the same window attention_base uses). Direct selections filter on campaign_id, Programmatic selections on ad_id. Served - Booked = Bonus impressions.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension ad_id {
+    label: 'Ad Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension report_code {
+    label: 'Report Code'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.report_code }};;
+  }
+  dimension date {
+    label: 'Date'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.date }};;
+  }
+  dimension window_start {
+    label: 'Window Start'
+    type: 'date'
+    hidden: false
+    description: 'Flight window start for the campaign/ad pair (stg_campaigns).'
+    definition: @sql {{ #SOURCE.window_start }};;
+  }
+  dimension window_end {
+    label: 'Window End'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.window_end }};;
+  }
+  dimension impressions {
+    label: 'Impressions'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.impressions }};;
+  }
+  dimension screens {
+    label: 'Screens'
+    type: 'number'
+    hidden: false
+    description: 'Distinct screens (mac_address) that played the ad on that date.'
+    definition: @sql {{ #SOURCE.screens }};;
+  }
+
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    WITH windows AS (
+      SELECT
+        CAST(campaign_id AS STRING) AS campaign_id,
+        ad_id,
+        MIN(DATE(start_at)) AS window_start,
+        MAX(DATE(end_at)) AS window_end
+      FROM `data_pipeline.stg_campaigns`
+      WHERE ad_id IS NOT NULL
+      GROUP BY 1, 2
+    )
+    SELECT
+      p.campaign_id,
+      p.ad_id,
+      p.report_code,
+      p.date,
+      w.window_start,
+      w.window_end,
+      SUM(p.impressions) AS impressions,
+      COUNT(DISTINCT p.mac_address) AS screens
+    FROM `data_pipeline.plays_summary` p
+    INNER JOIN windows w
+      ON COALESCE(CAST(p.campaign_id AS STRING), '') = COALESCE(w.campaign_id, '')
+     AND p.ad_id = w.ad_id
+     AND p.date BETWEEN w.window_start AND w.window_end
+    WHERE p.ad_id IS NOT NULL
+    GROUP BY 1, 2, 3, 4, 5, 6;;
+  models: [
+  ]
+}

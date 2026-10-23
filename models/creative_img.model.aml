@@ -1,0 +1,56 @@
+Model creative_img {
+  type: 'query'
+  label: 'Creative Img'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension ads_id {
+    label: 'Ads Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ads_id }};;
+  }
+  dimension media_type {
+    label: 'Media Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.media_type }};;
+  }
+  dimension creative_img {
+    label: 'Creative Img'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.creative_img }};;
+  }
+  dimension smart_moc {
+    label: 'Smart Moc'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.smart_moc }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    -- ads_id is text so it joins attention_base.ad_id (text; Programmatic ids are hex strings).
+    -- One row per ad: the raw_ads row wins, then the elev8_ads_ads row.
+    SELECT ads_id, media_type, creative_img, smart_moc
+    FROM (
+    SELECT *, 1 as src
+    FROM
+    (SELECT distinct cast(ads.id as string) as ads_id,media.type as media_type, concat('https://elev8app-production.s3.amazonaws.com/',key) as creative_img,'https://drive.google.com/thumbnail?id=1E44-__eCuF_ymcQ1VeatROd5AujCRuys&sz=w500' as smart_moc
+          FROM `tech-data-warehouse.raw_elev8_backend.raw_ads` as ads
+          INNER JOIN `tech-data-warehouse.raw_elev8_backend.raw_media`as media
+          ON ads.media_id = media.id
+          INNER JOIN `tech-data-warehouse.raw_elev8_backend.raw_active_storage_attachments`as storage_attachments
+          ON media.id = storage_attachments.record_id
+          INNER JOIN `tech-data-warehouse.raw_elev8_backend.raw_active_storage_blobs` as storage_blobs
+          ON storage_attachments.blob_id = storage_blobs.id
+          WHERE NOT storage_attachments.__hevo__marked_deleted)
+    UNION ALL
+    (select cast(ad_number as string),type,CONCAT('https://ads.verticalimpression.com/api/ad_thumbnails/',ad_number),'https://drive.google.com/thumbnail?id=1E44-__eCuF_ymcQ1VeatROd5AujCRuys&sz=w800' as smart_moc, 2 as src
+    from `data_pipeline.elev8_ads_ads`)
+    )
+    WHERE ads_id IS NOT NULL
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY ads_id ORDER BY src, creative_img) = 1;;
+  models: [
+  ]
+}
