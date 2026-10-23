@@ -1,5 +1,5 @@
 @tag('Status/Draft')
-Dataset attention_copy {
+Dataset attention_backup {
   label: 'Attention'
   description: 'Attention facts on the attention_base query model. One selection value (campaign id for Direct, ad id for Programmatic) drives everything: bind the dashboard control to the attention_base.report_filter param, which clips attention_base to the matching flight window via an inner join on DATE(start_at_utc) inside the model (is_in_flight_range, selected_campaign_start_date, selected_campaign_end_date); add the viz condition filter_model.report_filter == (attention_base.report_filter | first()) so the same value flows through the network scope chain (data_pipeline_stg_campaigns -> campaign_network_scope_bridge_v2 -> network_scope_v2, city + grouped ad length). filter_model.report_option (id|flight_start|flight_end) is kept as an option for a literal {{ param }} clip if constant-bound partition pruning is ever needed.'
   data_source_name: 'vc_data_warehouse'
