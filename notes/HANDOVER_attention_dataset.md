@@ -83,14 +83,21 @@ as the selected campaign, all campaigns). Metrics that need the campaign's own e
   column crashes the AQL compiler. Empty control ⇒ all data (35.8M events, avg 5.142).
 - Params have no model-level default (`Param` only has label/type/hidden/description/allowed_values).
 
-### BigQuery partition pruning (open topic, user is handling separately)
+### BigQuery partition pruning (resolved 2026-11-16: v3 now prunes)
 `attention_seconds_v2` and `_v3` have identical DDL (PARTITION BY DATE(start_at_utc), CLUSTER BY
-campaign_id, ad_id). The date-equality inner join prunes v2 (184.8 MB vs 1.75 GB) but NOT v3,
-and not a quarter-size copy of v2 either: BigQuery's join pruning is size-gated (somewhere
-between ~46M and ~185M rows). Only constant filters prune v3. A literal-param design
+campaign_id, ad_id). In October the date-equality inner join pruned v2 (184.8 MB vs 1.75 GB) but
+NOT v3, and not a quarter-size copy of v2 either: BigQuery's join pruning is size-gated (somewhere
+between ~46M and ~185M rows), and v3 was below the gate. A literal-param design
 (`filter_model.report_option` as `id|start|end` injected with `{{ report_option }}`) was built,
 proven to prune, and then removed in favour of the join (kept only as the `report_option`
 column). Test SQL: `notes/pruning_test_variants*.sql` in the Windows folder.
+
+Re-test 2026-11-16 (campaign 10605, window Aug 12 - Oct 1 2026, executed jobs, bytes processed):
+the v3 date-equality join (the exact shape `attention_base` generates) and the v3 literal
+timestamp filter both read ~1 GB, while the v3 full scan read 18.5 GB. So the join now prunes v3
+and `attention_base` as written is partition-pruned; no literal-param clip is needed. The full
+scan is far larger than October's 996 MB, so v3 itself grew a lot (consistent with crossing the
+size gate). Re-run queries 1, 3 and 4 above if the table is rebuilt or shrinks.
 
 ---
 
@@ -166,14 +173,41 @@ Looker would mean computing scope flags inside `attention_base` from the `report
 subqueries for the selection's cities and lengths), because a second relationship chain cannot be
 used (single-path rule); that would also remove the need for the viz condition.
 
+**Direct multi-campaign gap explained (2026-11-20, campaigns 10617 + 10618 + 10619, all 15s):**
+Holistics network 5.258771 over 685,143 events (Calgary, Edmonton, Toronto, Vancouver x 15s, window
+Sep 1 - Oct 26 2026; flights are contiguous so the min/max window equals Looker's date union). Mapped
+cities = observed cities here, so scope semantics are identical. The difference is **how Looker finds
+the observed cities**: its `city_clipping_helper` resolves the city through `device_id ->
+screen_mac_address_lookup_v2 -> views_properties_query_results` (status 'ready'), not through the
+event's `property_id`. 108 of the campaigns' 60,668 events sit on screens whose lookup property is in
+**North York** while the event's property_id says Toronto, so Looker adds the whole North York cell
+(197,942 events, avg 5.35) to the benchmark: 883,085 events, avg 5.27838 (reproduced in a temporary
+model with Looker's helper SQL, including the demography inner join; deleted afterwards). Holistics is
+the self-consistent one (the same property drives the event's city and the network's city). The 108
+events all come from one screen, MAC `c0-fb-f9-c6-61-93`, Sep 1-6 2026, campaign 10617: the events
+carry property 756 (Corktown District II, Toronto) while `screen_mac_address_lookup_v2` maps the MAC to
+property 161 (Chicago Residences, North York), a single lookup row, i.e. a stale or re-deployed screen
+record. If Looker
+parity is ever required, the fix is a scope flag for the screen-lookup cities, not a metric change.
+Looker also unions each flight's own dates (gaps between non-contiguous flights excluded) whereas the
+param clip uses min/max of the selection; irrelevant for contiguous flights.
+
 ### Validation dashboard
 `dashboards/looker_holistics_validation.page.aml` is a two-tab `TabLayout`:
-- **Direct 10605**: intro text explaining the mechanics, single-value control `f_report`
-  (param-sourced, default 10605), tables: campaign level, by ad, by gender, by gender x age.
+- **Direct 10605**: intro text explaining the mechanics, multi-value control `f_report`
+  (param-sourced, default 10605; made multi-value on 2026-11-20, campaign ids and ad ids can be
+  mixed), tables: campaign level, by ad, by gender, by gender x age. Its condition is
+  `coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or
+  filter_model.report_filter in attention_base.report_filter` (empty control = all data; validated
+  by the CLI, the empty-control case is not yet exercised in Studio).
 - **Programmatic ads**: multi-value control `f_ads` (default = the six ids above) wired only to the
-  tab-2 blocks, whose condition uses `in` (no empty-control fallback on this tab).
+  tab-2 blocks, which use the same condition as tab 1 since 2026-11-24 (empty control = all data;
+  before that the bare `in` returned 0 rows when the control was cleared).
 Each control is a separate FilterBlock on the same param; `explicit_interactions` maps each to its own
-tab's blocks only. Multi-select + `first()` would only use the first value, hence `in` on tab 2.
+tab's blocks only. Multi-select + `first()` would only use the first value, hence `in`. With several
+campaigns selected everything is pooled: one min/max window, one network (union of the selection's
+city x length cells), one campaign average. Campaigns never share creatives (user, 2026-11-20), so
+the stg_campaigns fan-out does not bite.
 
 Two bugs fixed on the way, both worth remembering:
 1. `attention_base` joined `properties.id`; the attention tables carry the property **number**
@@ -269,3 +303,72 @@ Design caveat (not changed): property attributes reach attention_base only throu
 A device missing from `screens` loses its province / FSA / property type even though attention_base has property_id.
 A direct `attention_base.property_id > properties.id` relationship would be more robust, but it would create a second
 path to properties, so the screens -> properties relationship would then have to become inactive. Decide with the user.
+
+**Decision 2026-10-22:** keep property attributes routed through screens (no direct attention_base -> properties relationship).
+
+## 9. Delivery dataset `vplus_delivery` (2026-10-22): flights + served impressions
+
+Separate dataset so the attention dataset's single-path design stays untouched. Models:
+- `vplus_flight_facts` (query): one row per attention-side campaign id. **Id spaces differ:** `elev8_ads_flights.campaign_id`
+  is the elev8 internal id (237, 273, ...), `campaign_reporting_campaigns.campaign_number` has no 10605, and the attention
+  campaign id 10605 corresponds to elev8 **flight** 605 (ads 101617.. have `elev8_ads_ads.flight_id = 605`, `ad_number = 101617`).
+  So the model maps flights -> ads (`elev8_ads_ads.flight_id`, `ad_number`) -> `stg_campaigns.ad_id` -> `campaign_id`, then sums
+  booked_impressions, contract_value_in_cents/100, make_good_credit_in_cents/100 and takes min start / max end, flight_ids, ad_lengths.
+- `vplus_served_impressions` (query): plays_summary at campaign x ad x date, inner-joined to the (campaign_id, ad_id) window
+  from stg_campaigns (min start_at / max end_at), same source as attention_base's clip. Programmatic: filter on ad_id.
+- `data_pipeline_campaign_reporting_campaigns`, `data_pipeline_elev8_ads_ads`: included, no relationships (ad names, lookups).
+- Relationship: `vplus_served_impressions.campaign_id > vplus_flight_facts.campaign_id` (two_way).
+- Metrics: booked_impressions, served_impressions, bonus_impressions (= served - booked, user's definition), contract_value,
+  make_good_credit, cpm (= contract / booked x 1000, assumption to confirm vs Looker flights_summary), flight_start, flight_end.
+
+10605: flight 605, 15 s, CAD, flight window Aug 12 - Sep 30 2026, booked 3,316,875, served 3,649,599 (18 ads, per-ad
+windows Aug 12 / Aug 25 / Sep 4 -> Sep 8), bonus 332,724, contract 26,535.00, make-good 0, CPM 8.00.
+Sanity: 10604 -> flight 604 (3,297,500 booked), 10368 -> flight 368 (2,301,153).
+
+**Open:** three different windows exist for 10605: flight (Aug 12 - Sep 30), stg_campaigns ad windows (end Sep 8), and the
+attention clip `selected_campaign_end_date` (Oct 1). The deck's start/end slide should state which one it shows.
+Looker's Look 40 also had rate card value and bonus value; neither is in elev8_ads_flights. Ad names in `elev8_ads_ads.name`
+are often internal codes (e.g. 1000062661); the deck's creative names came from Looker's creatives / creative group lookup.
+
+Report page `vplus_report_extract` now has controls `f_delivery` (campaign id, default 10605) and `f_delivery_ads`
+(ad ids), blocks `v_delivery` (campaign facts) and `v_served_by_ad`. Validated and synced; blocks not executed from the CLI.
+
+**Correction to section 9 (2026-10-22, later):** `vplus_flight_facts` no longer uses elev8_ads_flights or the ads mapping.
+Looker's `flights` view is `select * from data_pipeline.raw_campaigns`, and `raw_campaigns.id` IS the attention campaign id
+(10605), so the model reads raw_campaigns directly, one row per flight, with the Looker `flights_summary` logic:
+contract_cost = standard_price_cents/100; rate by ad_duration (5 s 700, 10 s 900, 15 s 1050, 30 s 1325, else 800 cents per
+1000); booked_value (rate card value) = actual_value_cents when present else rate x max(booked, actual)/1000, /100.
+Dataset metrics: booked_impressions, flight_actual_impressions (raw_campaigns.actual_impressions), served_impressions
+(plays_summary), bonus_impressions = served - booked, total_contract_cost, rate_card_value, bonus_value =
+case(when rate_card_value > total_contract_cost ...) (no `greatest` in AQL), cpm = coalesce(safe_divide(cost, booked)*1000, 0),
+flight_start/end, flight_count. `data_pipeline_raw_campaigns` added to the dataset.
+10605: 1 flight, Aug 12 - Sep 30, booked 3,316,875, flight actual 3,649,599 (= served from plays_summary, exact), bonus
+332,724, cost 26,535.00, rate card 38,320.79, bonus value 11,785.79, CPM 8.00. 3907 (notebook example): cost 6,600.67,
+rate card 12,212.58. Programmatic ad: CPM 0, bonus value 0.
+Report page: `v_delivery` (summary metrics), `v_flights` (raw_campaigns rows), `v_served_by_ad`.
+The Looker project export used for these definitions: `C:\Users\gldan\Downloads\looker-main-master\looker-main-master\views\flights_summary.view.lkml`.
+
+## 10. Python extractor (2026-10-23)
+
+Both datasets are published to production (attention 1099511680819, vplus_delivery 1099511682098). The standalone
+pipeline lives in the Windows clone at `vplus_deck/` (not synced; plain Python, key in a git-ignored `.env`).
+`py -m vplus_deck extract --config config/10605.yaml` pulls report (13,834 rows), totals, delivery, flights and
+served_by_ad into parquet in ~7 s and reconciles: 32,156 datapoints, 5.199657 vs network 5.233177 (-0.64%),
+booked 3,316,875 / served 3,649,599 / bonus 332,724, cost 26,535.00, rate card 38,320.79, bonus value 11,785.79, CPM 8.00.
+API facts: submit_query is async (job id) unless cached -> GET /jobs/{id} -> GET /jobs/{id}/result (result.data);
+filter key is `values`; params are filtered like fields; booleans accepted. Next: roll-up module + deck builder.
+
+## 11. Core deck builder (2026-10-23)
+
+`py -m vplus_deck build --config config/10605.yaml` fills `vplus_deck/templates/core_sample.pptx` (the user's Core
+template, Toronto Palapa Tours sample): slide 1 client + flight dates, 4 delivery summary, 5 highlights (avg, active
+attention donut, top gender/age/location, arrows flipped when negative, province map from GeoJSON, markets tiles, top
+creative thumbnail), 6 ad stack (table rows resized to N creatives, thumbnails, green/black vs network), 7 attention
+over time (Plotly, vs campaign when below network else vs network), 8 demographic cards (Plotly). Shapes are addressed by
+index and verified against the sample text; everything is resolved before any mutation (removals shift indexes).
+Modules: rollup.py (weighted averages, markets, top demographic with >=20 obs, ad stack, daily, commentary),
+deck_charts.py, deck.py. Tests: tests/test_rollup_10605.py (8 tests, pinned to the baseline). REVIEW.md lists manual
+items: creative display names (config creative_names), slide 4 photo, map pins, slides 2/3/9-11 untouched.
+Known gaps: ad names are ids (elev8_ads_ads names are codes); screen count = screens with attention (21), not active screens.
+
+**2026-10-26:** full maintainer documentation is in the Windows clone at vplus_deck/DEVELOPER_GUIDE.md (datasets, metrics, id spaces, package modules, template map, change procedures) with vplus_deck/CHANGELOG.md. The vplus AML files (models/vplus_*, properties, screens, creative_img, datasets/vplus_delivery, dashboards/vplus_report_extract) were still untracked in git here; commit them.

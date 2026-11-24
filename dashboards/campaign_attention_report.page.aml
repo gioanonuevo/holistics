@@ -1,0 +1,1610 @@
+Dashboard campaign_attention_report {
+  title: 'Campaign Attention Report'
+  description: @md
+    Official attention report for one Vertical Impression campaign. Pick a campaign id (Direct) or one or more ad ids (Programmatic) and the whole report follows: campaign attention versus the network benchmark, the daily trend, creatives, audience and markets. Built on the validated attention dataset and the VI client theme.
+  ;;
+  owner: 'ganonuevo@verticalcity.com'
+  theme: vi_client_dark_theme
+
+  settings {
+    timezone: 'Etc/UTC'
+    cache_duration: 1440
+    autorun_on_open: true
+    autorun_on_changes: true
+  }
+
+  // ---------------------------------------------------------------------------
+  // Control. One multi-value control sourced from the attention_base.report_filter
+  // PARAM (a param-sourced control is the only way a value reaches the flight-window
+  // clip in the model SQL). One campaign id (Direct) or several ad ids (Programmatic).
+  // Every block carries the condition
+  //   filter_model.report_filter in attention_base.report_filter
+  // so the same values flow through the network scope chain. The same block is placed
+  // on every tab, so the selection can be changed anywhere.
+  // ---------------------------------------------------------------------------
+  block f_report: FilterBlock {
+    label: 'Campaign ID (Direct) or Ad IDs (Programmatic)'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: attention
+      field: r(attention_base.report_filter)
+    }
+    default {
+      operator: 'is'
+      value: [
+        '10605'
+      ]
+    }
+    settings {
+      input_type: 'multiple'
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Text
+  // ---------------------------------------------------------------------------
+  block b_title: TextBlock {
+    content: @md
+# Campaign Attention Report
+Attention measured on Vertical Impression elevator screens for the selected campaign, benchmarked against the network: every other ad that ran in the same cities, at the same ad length, during the same flight window. All figures are restricted to the campaign flight window.
+    ;;
+  }
+
+  block h_trend: TextBlock {
+    content: @md
+## Attention over time
+Daily datapoints (bars) with the campaign average attention and the network average attention for the same day (lines). Days with very few datapoints are noisy.
+    ;;
+  }
+
+  block h_mix: TextBlock {
+    content: @md
+## Exposure and format
+Message exposure is an attention event of 2.5 seconds or more, brand exposure anything shorter. The format table compares image and video and each grouped ad length against the campaign and the network.
+    ;;
+  }
+
+  block h_creatives: TextBlock {
+    content: @md
+## Creative performance
+Average attention of each creative (ad) in the campaign against the network benchmark line. The table adds datapoints, format and the difference versus the campaign average and versus the network.
+    ;;
+  }
+
+  block h_audience: TextBlock {
+    content: @md
+## Audience
+Average attention by detected age group and gender. Each demographic is compared with the network average of the same demographic, so a segment is above or below the people like them on the network, not the overall average.
+    ;;
+  }
+
+  block h_markets: TextBlock {
+    content: @md
+## Markets and placement
+Where the campaign earned attention: city, province, property type and screen location. Versus Network uses the overall network benchmark of the selection.
+    ;;
+  }
+
+  // ---------------------------------------------------------------------------
+  // AI blocks: one per tab, each reading only the blocks of its tab.
+  // ---------------------------------------------------------------------------
+  block ai_overview: AiBlock {
+    label: 'Campaign highlights'
+    prompt: @md
+      You are writing the highlights panel of a client-facing campaign attention report for a digital out-of-home advertiser. Use @VizBlock:campaign_attention_report.k_campaign_avg, @VizBlock:campaign_attention_report.k_vs_network, @VizBlock:campaign_attention_report.k_datapoints, @VizBlock:campaign_attention_report.k_screens, @VizBlock:campaign_attention_report.v_window, @VizBlock:campaign_attention_report.v_trend, @VizBlock:campaign_attention_report.v_exposure and @VizBlock:campaign_attention_report.v_format.
+
+      Cover: how the campaign average attention compares with the network average (state both numbers and the percentage difference), the size of the evidence (datapoints, screens, flight window), how attention moved over the flight (best and weakest stretch, any clear trend), the share of message exposure, and which format or ad length did best. Treat a difference within plus or minus 1.5% of the network as on par.
+
+      Return only a compact, polished HTML fragment, no Markdown and no code fences. Use this spacing structure exactly: one outer <div style="line-height: 1.65; font-size: 14px;">; a headline <p style="margin: 0 0 12px;"> with a short bold headline; a <ul style="margin: 0 0 14px; padding-left: 22px;"> with up to four <li style="margin-bottom: 8px;"> items, one complete observation each; and a closing <p style="margin: 14px 0 0;"> with one clearly labelled takeaway for the client. Label positive, negative, on-par and takeaway findings with small coloured pill <span> tags using minimal inline styles. Use only <div>, <p>, <strong>, <span>, <ul>, <li> and <br>. No tables, headings, images, links, scripts or emojis. Under 170 words.
+    ;;
+  }
+
+  block ai_creatives: AiBlock {
+    label: 'Creative callouts'
+    prompt: @md
+      You are writing the creative callouts of a client-facing campaign attention report. Use @VizBlock:campaign_attention_report.v_ad_chart and @VizBlock:campaign_attention_report.v_ads only.
+
+      Name the strongest and the weakest creative by ad id with their average attention and their difference versus the campaign average and versus the network, say whether image or video and which ad length is winning, and flag any creative with too few datapoints to trust (under 300). Treat a difference within plus or minus 1.5% as on par.
+
+      Return only a compact, polished HTML fragment, no Markdown and no code fences. Use this spacing structure exactly: one outer <div style="line-height: 1.65; font-size: 14px;">; a headline <p style="margin: 0 0 12px;"> with a short bold headline; a <ul style="margin: 0 0 14px; padding-left: 22px;"> with up to four <li style="margin-bottom: 8px;"> items, one complete observation each; and a closing <p style="margin: 14px 0 0;"> with one clearly labelled recommendation on which creative to lean on. Label positive, negative, on-par and recommendation findings with small coloured pill <span> tags using minimal inline styles. Use only <div>, <p>, <strong>, <span>, <ul>, <li> and <br>. No tables, headings, images, links, scripts or emojis. Under 160 words.
+    ;;
+  }
+
+  block ai_audience: AiBlock {
+    label: 'Audience callouts'
+    prompt: @md
+      You are writing the audience callouts of a client-facing campaign attention report. Use @VizBlock:campaign_attention_report.v_age, @VizBlock:campaign_attention_report.v_gender and @VizBlock:campaign_attention_report.v_gender_age only.
+
+      Name the age group and the gender with the highest average attention, say how each compares with the network average of the same demographic, name the single best gender and age combination, and point out any segment that is clearly below its network benchmark. Treat a difference within plus or minus 1.5% as on par. Ignore segments with fewer than 100 datapoints.
+
+      Return only a compact, polished HTML fragment, no Markdown and no code fences. Use this spacing structure exactly: one outer <div style="line-height: 1.65; font-size: 14px;">; a headline <p style="margin: 0 0 12px;"> with a short bold headline; a <ul style="margin: 0 0 14px; padding-left: 22px;"> with up to four <li style="margin-bottom: 8px;"> items, one complete observation each; and a closing <p style="margin: 14px 0 0;"> with one clearly labelled takeaway about who the campaign resonated with. Label positive, negative, on-par and takeaway findings with small coloured pill <span> tags using minimal inline styles. Use only <div>, <p>, <strong>, <span>, <ul>, <li> and <br>. No tables, headings, images, links, scripts or emojis. Under 160 words.
+    ;;
+  }
+
+  block ai_markets: AiBlock {
+    label: 'Market and placement callouts'
+    prompt: @md
+      You are writing the market callouts of a client-facing campaign attention report. Use @VizBlock:campaign_attention_report.v_city_chart, @VizBlock:campaign_attention_report.v_city, @VizBlock:campaign_attention_report.v_province, @VizBlock:campaign_attention_report.v_property and @VizBlock:campaign_attention_report.v_screen_location only.
+
+      Name the top and bottom city by average attention with their difference versus the campaign average and versus the network, say which province carried most datapoints, compare residential and commercial properties, and compare elevator and lobby screens. Treat a difference within plus or minus 1.5% as on par. Ignore rows with fewer than 100 datapoints.
+
+      Return only a compact, polished HTML fragment, no Markdown and no code fences. Use this spacing structure exactly: one outer <div style="line-height: 1.65; font-size: 14px;">; a headline <p style="margin: 0 0 12px;"> with a short bold headline; a <ul style="margin: 0 0 14px; padding-left: 22px;"> with up to four <li style="margin-bottom: 8px;"> items, one complete observation each; and a closing <p style="margin: 14px 0 0;"> with one clearly labelled recommendation on where to weight the next flight. Label positive, negative, on-par and recommendation findings with small coloured pill <span> tags using minimal inline styles. Use only <div>, <p>, <strong>, <span>, <ul>, <li> and <br>. No tables, headings, images, links, scripts or emojis. Under 160 words.
+    ;;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Overview tab: KPIs
+  // ---------------------------------------------------------------------------
+  block k_campaign_avg: VizBlock {
+    label: 'Campaign Average Attention'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      value: VizFieldFull {
+        ref: r(attention.campaign_average_attention_seconds)
+        label: 'Campaign Average Attention'
+        format {
+          type: 'number'
+          pattern: '#,###0.00[$s]'
+        }
+      }
+      settings {
+        display_mode: 'single'
+      }
+    }
+  }
+
+  block k_vs_network: VizBlock {
+    label: 'Attention vs Network'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      value: VizFieldFull {
+        ref: r(attention.attention_vs_network)
+        label: 'Attention vs Network'
+        format {
+          type: 'number'
+          pattern: 'inherited'
+        }
+      }
+      settings {
+        display_mode: 'single'
+      }
+    }
+  }
+
+  block k_datapoints: VizBlock {
+    label: 'Datapoints'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      value: VizFieldFull {
+        ref: r(attention.campaign_datapoints)
+        label: 'Datapoints'
+        format {
+          type: 'number'
+          pattern: 'inherited'
+        }
+      }
+      settings {
+        display_mode: 'single'
+      }
+    }
+  }
+
+  block k_screens: VizBlock {
+    label: 'Screens with attention'
+    settings {
+      hide_label: true
+    }
+    viz: MetricKpi {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      value: VizFieldFull {
+        ref: r(attention.campaign_screens)
+        label: 'Screens with attention'
+        format {
+          type: 'number'
+          pattern: 'inherited'
+        }
+      }
+      settings {
+        display_mode: 'single'
+      }
+    }
+  }
+
+  block v_window: VizBlock {
+    label: 'Flight window and network benchmark'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention.selected_campaign_start_date)
+          label: 'Flight Start'
+          format {
+            type: 'date'
+            pattern: 'LLL dd, yyyy'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.selected_campaign_end_date)
+          label: 'Flight End'
+          format {
+            type: 'date'
+            pattern: 'LLL dd, yyyy'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          label: 'Campaign Average Attention (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_overall)
+          label: 'Network Average Attention (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_events)
+          label: 'Network Attention Events'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          label: 'Attention vs Network'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 100
+        wrap_header_text: true
+      }
+    }
+  }
+
+  block v_trend: VizBlock {
+    label: 'Daily attention'
+    viz: CombinationChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      x_axis: VizFieldFull {
+        ref: r(attention_base.start_date_local)
+        label: 'Date'
+        format {
+          type: 'date'
+          pattern: 'LLL dd, yyyy'
+        }
+      }
+      y_axis {
+        label: 'Datapoints'
+        series {
+          mark_type: 'column'
+          field: VizFieldFull {
+            ref: r(attention.campaign_datapoints)
+            label: 'Datapoints'
+            format {
+              type: 'number'
+              pattern: '#,###'
+            }
+          }
+        }
+        settings {
+          alignment: 'left'
+        }
+      }
+      y_axis {
+        label: 'Average Attention (s)'
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            ref: r(attention.attention_seconds_average)
+            label: 'Campaign Average Attention'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            ref: r(attention.average_attention_seconds)
+            label: 'Network Average Attention'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+        settings {
+          alignment: 'right'
+        }
+      }
+      settings {
+        legend_label: 'top'
+        show_data_points: false
+        row_limit: 1000
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+
+  block v_exposure: VizBlock {
+    label: 'Datapoints by exposure'
+    viz: CombinationChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      x_axis: VizFieldFull {
+        ref: r(attention_base.exposure_category)
+        label: 'Exposure'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention.campaign_datapoints)
+            label: 'Datapoints'
+            format {
+              type: 'number'
+              pattern: '#,###'
+            }
+          }
+        }
+      }
+      settings {
+        legend_label: 'top'
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+  block v_format: VizBlock {
+    label: 'By format and ad length'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          label: 'Format'
+          ref: r(attention_base.ads_type)
+          format {
+            type: 'text'
+          }
+          uname: 'attention_base_ads_type'
+        },
+        VizFieldFull {
+          label: 'Ad Length (s)'
+          ref: r(attention_base.ad_length_grouped)
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+          uname: 'attention_base_ad_length_grouped'
+        },
+        VizFieldFull {
+          label: 'Datapoints'
+          ref: r(attention.campaign_datapoints)
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+          uname: 'custom_campaign_datapoints'
+        },
+        VizFieldFull {
+          label: 'Average Attention (s)'
+          ref: r(attention.attention_seconds_average)
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+          uname: 'custom_attention_seconds_average'
+        },
+        VizFieldFull {
+          label: 'vs Campaign'
+          ref: r(attention.attention_vs_campaign)
+          uname: 'custom_attention_vs_campaign'
+        },
+        VizFieldFull {
+          label: 'vs Network'
+          ref: r(attention.attention_vs_network)
+          uname: 'custom_attention_vs_network'
+        }
+      ]
+      settings {
+        row_limit: 100
+        wrap_header_text: true
+        aggregate_awareness {
+          enabled: true
+          debug_comments: true
+        }
+        column_styles: [
+          ColumnStyle {
+            key: 'attention_base_ads_type'
+            width: 100
+          },
+          ColumnStyle {
+            key: 'attention_base_ad_length_grouped'
+            width: 88
+          },
+          ColumnStyle {
+            key: 'custom_campaign_datapoints'
+            width: 100
+          },
+          ColumnStyle {
+            key: 'custom_attention_seconds_average'
+            width: 108
+          },
+          ColumnStyle {
+            key: 'custom_attention_vs_campaign'
+            width: 94
+          },
+          ColumnStyle {
+            key: 'custom_attention_vs_network'
+            width: 94
+          }
+        ]
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Creatives tab
+  // ---------------------------------------------------------------------------
+  block v_ad_chart: VizBlock {
+    label: 'Average attention by creative'
+    viz: CombinationChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      x_axis: VizFieldFull {
+        ref: r(attention_base.ad_id)
+        label: 'Ad Id'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        label: 'Average Attention (s)'
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention.attention_seconds_average)
+            label: 'Creative Average Attention'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            ref: r(attention.network_average_overall)
+            label: 'Network Average Attention'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+      }
+      settings {
+        legend_label: 'top'
+        row_limit: 200
+        sort: LineFamilySort {
+          type: 'yaxis'
+          direction: 'desc'
+        }
+      }
+    }
+  }
+
+  block v_gallery: VizBlock {
+    label: 'Creative gallery'
+    description: @md
+      One card per creative with its thumbnail, format and attention performance for the selected campaign or ads. Sorted by datapoints.
+    ;;
+    viz: MarkdownViz {
+      dataset: attention
+      rows: [
+        VizFieldFull {
+          ref: r(attention_base.ad_id)
+          label: 'Ad'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(creative_img.media_type)
+          label: 'Media'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(creative_img.creative_img)
+          label: 'Img'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ads_type)
+          label: 'Fmt'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ad_length_grouped)
+          label: 'Len'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Avg Att'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          label: 'Vs Campaign'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          label: 'Vs Network'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      content: @md
+        <style>
+          .creative-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            padding: 2px;
+          }
+          .creative-card {
+            overflow: hidden;
+            border: 1px solid rgba(128, 144, 160, 0.35);
+            border-radius: 12px;
+            background: rgba(128, 144, 160, 0.06);
+          }
+          .creative-image-wrap {
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background: rgba(128, 144, 160, 0.12);
+          }
+          .creative-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          .creative-body {
+            padding: 14px 16px 16px;
+          }
+          .creative-title {
+            margin: 0;
+            font-family: 'Space Grotesk', Inter, sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.3;
+            color: inherit;
+          }
+          .creative-meta {
+            margin: 4px 0 12px;
+            font-size: 12px;
+            line-height: 1.4;
+            opacity: 0.75;
+          }
+          .creative-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+          }
+          .creative-stat {
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(128, 144, 160, 0.12);
+          }
+          .creative-stat-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            opacity: 0.7;
+          }
+          .creative-stat-value {
+            display: block;
+            margin-top: 2px;
+            font-family: 'Space Grotesk', Inter, sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: inherit;
+          }
+          .creative-stat-value.accent {
+            color: #0eccc2;
+          }
+          .creative-pager {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-top: 14px;
+            font-size: 12px;
+            opacity: 0.85;
+          }
+        </style>
+
+        <div class="creative-cards">
+        {% map(rows) %}
+          <article class="creative-card">
+            <div class="creative-image-wrap">
+              <img class="creative-image" src="{{ `Img`.raw }}" alt="Creative for ad {{ `Ad`.raw }}" loading="lazy" />
+            </div>
+            <div class="creative-body">
+              <h3 class="creative-title">Ad {{ `Ad`.raw }}</h3>
+              <p class="creative-meta">{{ `Media`.raw }} &middot; {{ `Fmt`.raw }} &middot; {{ `Len`.formatted }} s</p>
+              <div class="creative-stats">
+                <div class="creative-stat">
+                  <span class="creative-stat-label">Datapoints</span>
+                  <span class="creative-stat-value">{{ values.`Datapoints`.formatted }}</span>
+                </div>
+                <div class="creative-stat">
+                  <span class="creative-stat-label">Average Attention</span>
+                  <span class="creative-stat-value">{{ values.`Avg Att`.formatted }} s</span>
+                </div>
+                <div class="creative-stat">
+                  <span class="creative-stat-label">vs Campaign</span>
+                  <span class="creative-stat-value accent">{{ values.`Vs Campaign`.formatted }}</span>
+                </div>
+                <div class="creative-stat">
+                  <span class="creative-stat-label">vs Network</span>
+                  <span class="creative-stat-value accent">{{ values.`Vs Network`.formatted }}</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        {% end %}
+        </div>
+
+        <div class="creative-pager">
+          <h-pagination type="previous">&lsaquo; Previous</h-pagination>
+          <span>Page {{ meta.page }} of {{ meta.page_count }}</span>
+          <h-pagination type="next">Next &rsaquo;</h-pagination>
+        </div>
+      ;;
+      settings {
+        pagination_size: 12
+        sorts: [
+          KeyBasedSortSetting {
+            key: 'attention.campaign_datapoints'
+            direction: 'desc'
+          }
+        ]
+      }
+    }
+  }
+
+  block v_ads: VizBlock {
+    label: 'Creative detail'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.ad_id)
+          label: 'Ad Id'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(creative_img.media_type)
+          label: 'Media'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ads_type)
+          label: 'Format'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ad_length_grouped)
+          label: 'Ad Length (s)'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Average Attention (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          label: 'vs Campaign'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          label: 'vs Network'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 500
+        wrap_header_text: true
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Audience tab
+  // ---------------------------------------------------------------------------
+  block v_age: VizBlock {
+    label: 'Attention by age group vs network'
+    viz: CombinationChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      x_axis: VizFieldFull {
+        ref: r(attention_base.age_group)
+        label: 'Age Group'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        label: 'Average Attention (s)'
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention.attention_seconds_average)
+            label: 'Campaign'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention.network_average_by_age_group)
+            label: 'Network (same age group)'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+      }
+      settings {
+        legend_label: 'top'
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+
+  block v_gender: VizBlock {
+    label: 'Attention by gender vs network'
+    viz: CombinationChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      x_axis: VizFieldFull {
+        ref: r(attention_base.gender)
+        label: 'Gender'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        label: 'Average Attention (s)'
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention.attention_seconds_average)
+            label: 'Campaign'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention.network_average_by_gender)
+            label: 'Network (same gender)'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+      }
+      settings {
+        legend_label: 'top'
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+
+  block v_gender_age: VizBlock {
+    label: 'Gender x age group'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.gender)
+          label: 'Gender'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.age_group)
+          label: 'Age Group'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Average Attention (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          label: 'vs Campaign'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.network_average_by_gender_age)
+          label: 'Network, same gender and age (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network_by_gender_age)
+          label: 'vs Network (same gender and age)'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 100
+        wrap_header_text: true
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Markets and placement tab
+  // ---------------------------------------------------------------------------
+  block v_city_chart: VizBlock {
+    label: 'Average attention by city'
+    viz: CombinationChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      x_axis: VizFieldFull {
+        ref: r(attention_base.city)
+        label: 'City'
+        format {
+          type: 'text'
+        }
+      }
+      y_axis {
+        label: 'Average Attention (s)'
+        series {
+          mark_type: 'bar'
+          field: VizFieldFull {
+            ref: r(attention.attention_seconds_average)
+            label: 'Campaign Average Attention'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            ref: r(attention.network_average_overall)
+            label: 'Network Average Attention'
+            format {
+              type: 'number'
+              pattern: '#,###0.00'
+            }
+          }
+        }
+      }
+      settings {
+        legend_label: 'top'
+        row_limit: 100
+        sort: LineFamilySort {
+          type: 'yaxis'
+          direction: 'desc'
+        }
+      }
+    }
+  }
+
+  block v_city: VizBlock {
+    label: 'By city'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.city)
+          label: 'City'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Average Attention (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          label: 'vs Campaign'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          label: 'vs Network'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 500
+        wrap_header_text: true
+      }
+    }
+  }
+
+  block v_province: VizBlock {
+    label: 'By province'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(properties.address_province)
+          label: 'Province'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Average Attention (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          label: 'vs Campaign'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          label: 'vs Network'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 100
+        wrap_header_text: true
+      }
+    }
+  }
+
+  block v_property: VizBlock {
+    label: 'By property type'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(properties.property_type_broad)
+          label: 'Property Type'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(properties.property_type)
+          label: 'Property Sub-type'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Average Attention (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          label: 'vs Campaign'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          label: 'vs Network'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 100
+        wrap_header_text: true
+      }
+    }
+  }
+
+  block v_screen_location: VizBlock {
+    label: 'By screen location'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(screens.screen_location)
+          label: 'Screen Location'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.campaign_screens)
+          label: 'Screens'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Average Attention (s)'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          label: 'vs Campaign'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_network)
+          label: 'vs Network'
+          format {
+            type: 'number'
+            pattern: 'inherited'
+          }
+        }
+      ]
+      settings {
+        row_limit: 100
+        wrap_header_text: true
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Interactions: the one control drives every data block on every tab.
+  // ---------------------------------------------------------------------------
+  explicit_interactions: [
+    FilterInteraction {
+      from: 'f_report'
+      to: [
+        'k_campaign_avg',
+        'k_vs_network',
+        'k_datapoints',
+        'k_screens',
+        'v_window',
+        'v_trend',
+        'v_exposure',
+        'v_format',
+        'v_ad_chart',
+        'v_ads',
+        'v_gallery',
+        'v_age',
+        'v_gender',
+        'v_gender_age',
+        'v_city_chart',
+        'v_city',
+        'v_province',
+        'v_property',
+        'v_screen_location'
+      ]
+      field: r(attention_base.report_filter)
+    }
+  ]
+
+  // ---------------------------------------------------------------------------
+  // View: four tabs, control row at the top of each, AI callouts above the charts.
+  // ---------------------------------------------------------------------------
+  view: TabLayout {
+    tab overview: CanvasLayout {
+      label: 'Overview'
+      width: 1300
+      height: 1900
+      grid_size: 20
+      auto_expand_vertically: true
+      default_zoom: 'fit_to_width'
+      block b_title {
+        position: pos(20, 20, 1260, 120)
+        layer: 1
+      }
+      block f_report {
+        position: pos(20, 160, 620, 100)
+        layer: 1
+      }
+      block k_campaign_avg {
+        position: pos(20, 280, 300, 140)
+        layer: 1
+      }
+      block k_vs_network {
+        position: pos(340, 280, 300, 140)
+        layer: 1
+      }
+      block k_datapoints {
+        position: pos(660, 280, 300, 140)
+        layer: 1
+      }
+      block k_screens {
+        position: pos(980, 280, 300, 140)
+        layer: 1
+      }
+      block v_window {
+        position: pos(20, 440, 1260, 140)
+        layer: 1
+      }
+      block ai_overview {
+        position: pos(20, 600, 1260, 320)
+        layer: 1
+      }
+      block h_trend {
+        position: pos(20, 940, 1260, 80)
+        layer: 1
+      }
+      block v_trend {
+        position: pos(20, 1040, 1260, 420)
+        layer: 1
+      }
+      block h_mix {
+        position: pos(20, 1480, 1260, 80)
+        layer: 1
+      }
+      block v_exposure {
+        position: pos(20, 1580, 620, 300)
+        layer: 1
+      }
+      block v_format {
+        position: pos(660, 1580, 620, 300)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+
+    tab creatives: CanvasLayout {
+      label: 'Creatives'
+      width: 1300
+      height: 2400
+      grid_size: 20
+      auto_expand_vertically: true
+      default_zoom: 'fit_to_width'
+      block f_report {
+        position: pos(20, 20, 620, 100)
+        layer: 1
+      }
+      block h_creatives {
+        position: pos(20, 140, 1260, 80)
+        layer: 1
+      }
+      block ai_creatives {
+        position: pos(20, 240, 1260, 320)
+        layer: 1
+      }
+      block v_ad_chart {
+        position: pos(20, 580, 1260, 420)
+        layer: 1
+      }
+      block v_gallery {
+        position: pos(20, 1020, 1260, 780)
+        layer: 1
+      }
+      block v_ads {
+        position: pos(20, 1820, 1260, 560)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+
+    tab audience: CanvasLayout {
+      label: 'Audience'
+      width: 1300
+      height: 1500
+      grid_size: 20
+      auto_expand_vertically: true
+      default_zoom: 'fit_to_width'
+      block f_report {
+        position: pos(20, 20, 620, 100)
+        layer: 1
+      }
+      block h_audience {
+        position: pos(20, 140, 1260, 80)
+        layer: 1
+      }
+      block ai_audience {
+        position: pos(20, 240, 1260, 320)
+        layer: 1
+      }
+      block v_age {
+        position: pos(20, 580, 620, 400)
+        layer: 1
+      }
+      block v_gender {
+        position: pos(660, 580, 620, 400)
+        layer: 1
+      }
+      block v_gender_age {
+        position: pos(20, 1000, 1260, 480)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+
+    tab markets: CanvasLayout {
+      label: 'Markets & Placement'
+      width: 1300
+      height: 1760
+      grid_size: 20
+      auto_expand_vertically: true
+      default_zoom: 'fit_to_width'
+      block f_report {
+        position: pos(20, 20, 620, 100)
+        layer: 1
+      }
+      block h_markets {
+        position: pos(20, 140, 1260, 80)
+        layer: 1
+      }
+      block ai_markets {
+        position: pos(20, 240, 1260, 320)
+        layer: 1
+      }
+      block v_city_chart {
+        position: pos(20, 580, 1260, 400)
+        layer: 1
+      }
+      block v_city {
+        position: pos(20, 1000, 620, 400)
+        layer: 1
+      }
+      block v_province {
+        position: pos(660, 1000, 620, 400)
+        layer: 1
+      }
+      block v_property {
+        position: pos(20, 1420, 620, 320)
+        layer: 1
+      }
+      block v_screen_location {
+        position: pos(660, 1420, 620, 320)
+        layer: 1
+      }
+      mobile {
+        mode: 'auto'
+      }
+    }
+  }
+}

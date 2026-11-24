@@ -5,11 +5,12 @@ Dashboard looker_holistics_validation {
 
   // ---------------------------------------------------------------------------
   // Controls. Both are sourced from the attention_base.report_filter PARAM (a param-sourced
-  // control is the only way a value reaches a {% filter %} in the model SQL). Tab 1 takes one
-  // value, tab 2 takes several. Each control is wired only to the blocks of its own tab.
+  // control is the only way a value reaches a {% filter %} in the model SQL). Both controls take
+  // several values (campaign ids and ad ids can be mixed); the model SQL clips to the min/max
+  // flight window of the whole selection. Each control is wired only to the blocks of its own tab.
   // ---------------------------------------------------------------------------
   block f_report: FilterBlock {
-    label: 'Campaign ID or Ad ID (single)'
+    label: 'Campaign IDs or Ad IDs'
     type: 'field'
     source: FieldFilterSource {
       dataset: attention
@@ -17,10 +18,12 @@ Dashboard looker_holistics_validation {
     }
     default {
       operator: 'is'
-      value: '10605'
+      value: [
+        '10605'
+      ]
     }
     settings {
-      input_type: 'single'
+      input_type: 'multiple'
     }
   }
 
@@ -55,7 +58,7 @@ Dashboard looker_holistics_validation {
 ## How this dataset works
 
 1. **One control, one param.** The control writes `attention_base.report_filter` (a campaign id for Direct, an ad id for Programmatic). Inside `attention_base` the param selects the matching rows of `stg_campaigns`, takes their min/max flight dates, expands them to one row per date and **inner-joins them on `DATE(start_at_utc)`** directly on the partitioned table. Rows outside the window never leave the model (`is_in_flight_range` is true for every surviving row).
-2. **Network scope.** Every block carries the AQL condition `filter_model.report_filter == coalesce(param | first(), '__all__') or ... == '__all__'` (tab 2 uses `in`). It filters `filter_model`, and the filter flows `filter_model -> stg_campaigns -> campaign_network_scope_bridge_v2 -> network_scope_v2 -> attention_base`: all events in the same cities and grouped ad lengths as the selection, from any campaign. With the control empty the sentinel keeps every row.
+2. **Network scope.** Every block carries the AQL condition `coalesce(param | first(), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter` (several ids allowed). It filters `filter_model`, and the filter flows `filter_model -> stg_campaigns -> campaign_network_scope_bridge_v2 -> network_scope_v2 -> attention_base`: all events in the same cities and grouped ad lengths as the selection, from any campaign. With the control empty the sentinel keeps every row.
 3. **Campaign vs network.** `average_attention_seconds` / `attention_events` are the network (campaign identity excluded from the grain, filter kept). `campaign_average_attention_seconds` / `campaign_datapoints` activate the inactive relationship `attention_base.ad_id > stg_campaigns.ad_id` with `with_relationships()` so only the selection's own events count.
 4. **Comparisons.** `attention_vs_campaign` = row attention vs the whole selection (`of_all(attention_base)`); `attention_vs_network` = row attention vs the single-number network average (Looker `attention_network_average`). The gender / age / gender x age variants pin the network average to that demographic with `keep_grains()` and are only meaningful in tables grouped by it.
     ;;
@@ -65,7 +68,7 @@ Dashboard looker_holistics_validation {
     content: @md
 ## Programmatic test
 
-Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_mapping` these rows have a **null campaign_id**, so the v2 bridge join had to be made null-safe for them to get a network scope at all. The flight window is the min/max envelope across all six ads. The block condition is `filter_model.report_filter in attention_base.report_filter` (no empty-control fallback on this tab).
+Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_mapping` these rows have a **null campaign_id**, so the v2 bridge join had to be made null-safe for them to get a network scope at all. The flight window is the min/max envelope across all six ads. The block condition is the same as tab 1, so clearing the control shows all data.
     ;;
   }
 
@@ -82,7 +85,7 @@ Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_
         value: true
       }
       conditions: [
-        "filter_model.report_filter == coalesce((attention_base.report_filter | first()), '__all__') or coalesce((attention_base.report_filter | first()), '__all__') == '__all__'"
+        "coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter"
       ]
       fields: [
         VizFieldFull {
@@ -175,7 +178,7 @@ Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_
         value: true
       }
       conditions: [
-        "filter_model.report_filter == coalesce((attention_base.report_filter | first()), '__all__') or coalesce((attention_base.report_filter | first()), '__all__') == '__all__'"
+        "coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter"
       ]
       fields: [
         VizFieldFull {
@@ -251,7 +254,7 @@ Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_
         value: true
       }
       conditions: [
-        "filter_model.report_filter == coalesce((attention_base.report_filter | first()), '__all__') or coalesce((attention_base.report_filter | first()), '__all__') == '__all__'"
+        "coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter"
       ]
       fields: [
         VizFieldFull {
@@ -340,7 +343,7 @@ Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_
         value: true
       }
       conditions: [
-        "filter_model.report_filter == coalesce((attention_base.report_filter | first()), '__all__') or coalesce((attention_base.report_filter | first()), '__all__') == '__all__'"
+        "coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter"
       ]
       fields: [
         VizFieldFull {
@@ -414,7 +417,7 @@ Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_
         value: true
       }
       conditions: [
-        'filter_model.report_filter in attention_base.report_filter'
+        "coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter"
       ]
       fields: [
         VizFieldFull {
@@ -507,7 +510,7 @@ Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_
         value: true
       }
       conditions: [
-        'filter_model.report_filter in attention_base.report_filter'
+        "coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter"
       ]
       fields: [
         VizFieldFull {
@@ -576,7 +579,7 @@ Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_
         value: true
       }
       conditions: [
-        'filter_model.report_filter in attention_base.report_filter'
+        "coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter"
       ]
       fields: [
         VizFieldFull {
@@ -645,7 +648,7 @@ Six Programmatic ad ids selected at once. In `stg_campaigns` and `creative_city_
         value: true
       }
       conditions: [
-        'filter_model.report_filter in attention_base.report_filter'
+        "coalesce((attention_base.report_filter | first()), '__all__') == '__all__' or filter_model.report_filter in attention_base.report_filter"
       ]
       fields: [
         VizFieldFull {

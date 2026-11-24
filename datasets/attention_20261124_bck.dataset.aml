@@ -1,6 +1,6 @@
 @tag('Status/Draft')
-Dataset attention_copy {
-  label: 'Attention bck 2'
+Dataset attention_copy_2 {
+  label: 'Attention'
   description: 'Attention facts on the attention_base query model. One selection value (campaign id for Direct, ad id for Programmatic) drives everything: bind the dashboard control to the attention_base.report_filter param, which clips attention_base to the matching flight window via an inner join on DATE(start_at_utc) inside the model (is_in_flight_range, selected_campaign_start_date, selected_campaign_end_date); add the viz condition filter_model.report_filter == (attention_base.report_filter | first()) so the same value flows through the network scope chain (data_pipeline_stg_campaigns -> campaign_network_scope_bridge_v2 -> network_scope_v2, city + grouped ad length). filter_model.report_option (id|flight_start|flight_end) is kept as an option for a literal {{ param }} clip if constant-bound partition pruning is ever needed.'
   data_source_name: 'vc_data_warehouse'
   owner: 'ganonuevo@verticalcity.com'
@@ -11,6 +11,10 @@ Dataset attention_copy {
     network_scope_v2,
     campaign_network_scope_bridge_v2,
     data_pipeline_stg_campaigns
+    ,
+    creative_img,
+    properties,
+    screens
   ]
 
   relationships: [
@@ -19,6 +23,12 @@ Dataset attention_copy {
     relationship(campaign_network_scope_bridge_v2.network_scope_key > network_scope_v2.network_scope_key, true, direction: 'two_way'),
     relationship(campaign_network_scope_bridge_v2.ad_id > data_pipeline_stg_campaigns.ad_id, true, direction: 'two_way'),
     relationship(data_pipeline_stg_campaigns.ad_id > filter_model.ad_id, true, direction: 'two_way')
+    ,
+    relationship(attention_base.device_id > screens.mac_address, true)
+    ,
+    relationship(screens.property_id > properties.id, true)
+    ,
+    relationship(attention_base.ad_id > creative_img.ads_id, true)
   ]
 
   metric selected_campaign_start_date {
@@ -119,6 +129,21 @@ Dataset attention_copy {
     description: 'Number of attention observation rows that belong to the selected campaign or ad inside its flight window (plain row count, like Looker attention_seconds_count; v3 rows are counted as they are). Equivalent of Total Observations in the client dashboard.'
     definition: @aql
       count(attention_base.uuid)
+      | where(
+          attention_base.ad_id is not null,
+          attention_base.attention_seconds is not null
+        )
+      | with_relationships(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id)
+    ;;
+    format: '#,###'
+  }
+
+  metric campaign_screens {
+    label: 'Screens (with attention)'
+    type: 'number'
+    description: 'Distinct devices (screens) that recorded attention events for the selected campaign or ad inside its flight window.'
+    definition: @aql
+      count_distinct(attention_base.device_id)
       | where(
           attention_base.ad_id is not null,
           attention_base.attention_seconds is not null
