@@ -1,0 +1,91 @@
+Model vplus_flight_screens {
+  type: 'query'
+  label: 'V+ Flight Screens'
+  description: 'Screens that played a campaign, from data_pipeline.plays_summary: one row per campaign x screen (mac_address), clipped to the flight window of the campaign/ad pair in data_pipeline.stg_campaigns (the same window as vplus_served_impressions). Province comes from data_pipeline.properties joined on plays_summary.property_id = properties.property_number (never properties.id), with the Looker property filters (Canada, not test, not deleted). Feeds Screen Count and Flight Provinces on the Basic Dashboard.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension mac_address {
+    label: 'Screen (MAC Address)'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.mac_address }};;
+  }
+  dimension property_id {
+    label: 'Property Number'
+    type: 'number'
+    hidden: false
+    description: 'plays_summary.property_id = properties.property_number.'
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension province {
+    label: 'Province'
+    type: 'text'
+    hidden: false
+    description: 'Province of the property the screen is in (two-letter code). Null when the property is not in the filtered properties table.'
+    definition: @sql {{ #SOURCE.province }};;
+  }
+  dimension impressions {
+    label: 'Impressions'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.impressions }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    WITH windows AS (
+      SELECT
+        CAST(campaign_id AS STRING) AS campaign_id,
+        ad_id,
+        MIN(DATE(start_at)) AS window_start,
+        MAX(DATE(end_at)) AS window_end
+      FROM `data_pipeline.stg_campaigns`
+      WHERE ad_id IS NOT NULL
+      GROUP BY 1, 2
+    ),
+    props AS (
+      SELECT
+        property_number,
+        CASE
+          WHEN region = 'Alberta' THEN 'AB'
+          WHEN region = 'British Columbia' THEN 'BC'
+          WHEN region = 'Newfoundland and Labrador' THEN 'NL'
+          WHEN region = 'Ontario' THEN 'ON'
+          WHEN region = 'Québec' THEN 'QC'
+          WHEN region = 'Manitoba' THEN 'MB'
+          WHEN region = 'Saskatchewan' THEN 'SK'
+          WHEN region = 'Nova Scotia' THEN 'NS'
+          WHEN region = 'Northwest Territories' THEN 'NT'
+          WHEN region = 'Yukon' THEN 'YT'
+          ELSE region
+        END AS province
+      FROM `data_pipeline.properties`
+      WHERE country = 'Canada'
+        AND test = false
+        AND is_deleted = false
+    )
+    SELECT
+      p.campaign_id,
+      p.mac_address,
+      p.property_id,
+      pr.province,
+      SUM(p.impressions) AS impressions
+    FROM `data_pipeline.plays_summary` p
+    INNER JOIN windows w
+      ON COALESCE(CAST(p.campaign_id AS STRING), '') = COALESCE(w.campaign_id, '')
+     AND p.ad_id = w.ad_id
+     AND p.date BETWEEN w.window_start AND w.window_end
+    LEFT JOIN props pr
+      ON p.property_id = pr.property_number
+    WHERE p.ad_id IS NOT NULL
+      AND p.campaign_id IS NOT NULL
+    GROUP BY 1, 2, 3, 4;;
+  models: [
+  ]
+}

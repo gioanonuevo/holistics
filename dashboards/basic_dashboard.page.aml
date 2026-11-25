@@ -1,0 +1,657 @@
+@tag('Status/Draft')
+Dashboard basic_dashboard {
+  title: 'Basic Dashboard'
+  description: @md Flight summary for one campaign: name, flight dates, CPM, impressions (booked, delivered, bonus) and contract amounts (cost, rate card value, bonus value). Rebuilt from the Looker Basic Dashboard. Pick a flight id at the top to load a campaign. ;;
+  owner: 'ganonuevo@verticalcity.com'
+  theme: H.themes.classic
+
+  // ---------------------------------------------------------------------------
+  // Looker filter "Frame Scope Flight ID". raw_campaigns.id = flight id = attention campaign id.
+  // The default is kept on purpose: every tile is a sum over the selected flights, so an empty
+  // control would add up every flight in raw_campaigns.
+  // ---------------------------------------------------------------------------
+  block f_flight: FilterBlock {
+    label: 'Flight ID'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: vplus_delivery
+      field: r(vplus_flight_facts.campaign_id)
+    }
+    default {
+      operator: 'is'
+      value: ['10605']
+    }
+    settings {
+      input_type: 'multiple'
+    }
+  }
+
+  block t_header: TextBlock {
+    content: @md
+<div style="background:#6C4DC4;color:#ffffff;font-weight:700;letter-spacing:1px;font-size:16px;padding:14px 18px;clip-path:polygon(0 0,100% 0,98% 100%,0 100%);">FLIGHT SUMMARY</div>
+    ;;
+  }
+
+  block t_logo: TextBlock {
+    content: @md
+<div style="text-align:right;padding:8px 12px 0 0;"><img src="https://uploads-ssl.webflow.com/5de034f7b1a94eee0c714fde/5e879e904fbaeaf7b6177f84_VI_Logo_140px.png" alt="Vertical Impression" style="height:44px;width:auto;" /></div>
+    ;;
+  }
+
+  block v_campaign_name: VizBlock {
+    label: 'Campaign Name'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      rows: [
+        VizFieldFull {
+          ref: r(vplus_flight_facts.campaign_name)
+          label: 'Campaign Name'
+        }
+      ]
+      content: @md
+        <style>
+        .cn-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          min-height: 120px;
+          padding: 1rem;
+          box-sizing: border-box;
+          color: inherit;
+        }
+        .cn-caption {
+          font-size: 0.8rem;
+          opacity: 0.6;
+          margin-bottom: 0.5rem;
+          color: inherit;
+        }
+        .cn-value {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="cn-card">
+          <div class="cn-caption">Campaign Name</div>
+          {% map(rows) %}
+          <div class="cn-value">{{ `Campaign Name` }}</div>
+          {% end %}
+        </div>
+      ;;
+    }
+  }
+
+  block v_date_range: VizBlock {
+    label: 'Date Range'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.flight_start)
+          label: 'Flight Start'
+          format {
+            type: 'date'
+            pattern: 'LLL d, yyyy'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.flight_end)
+          label: 'Flight End'
+          format {
+            type: 'date'
+            pattern: 'LLL d, yyyy'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-date-range {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-date-range {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-date-range {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-date-range">
+          <div class="bd-caption-v-date-range">Date Range</div>
+          <div class="bd-value-v-date-range">{{ rows[0].values.`Flight Start`.formatted }} - {{ rows[0].values.`Flight End`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_screen_count: VizBlock {
+    label: 'Screen Count'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.screen_count)
+          label: 'Screen Count'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-screen-count {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-screen-count {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-screen-count {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-screen-count">
+          <div class="bd-caption-v-screen-count">Screen Count</div>
+          <div class="bd-value-v-screen-count">{{ rows[0].values.`Screen Count`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_cpm: VizBlock {
+    label: 'CPM'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.cpm)
+          label: 'CPM'
+          format {
+            type: 'number'
+            pattern: '[$$]#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-cpm {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-cpm {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-cpm {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-cpm">
+          <div class="bd-caption-v-cpm">CPM</div>
+          <div class="bd-value-v-cpm">{{ rows[0].values.`CPM`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_provinces: VizBlock {
+    label: 'Flight Provinces'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      rows: [
+        VizFieldFull {
+          ref: r(vplus_flight_screens.province)
+          label: 'Flight Provinces'
+        }
+      ]
+      content: @md
+        <style>
+        .bd-prov {
+          text-align: center;
+          height: 100%;
+          box-sizing: border-box;
+          color: inherit;
+        }
+        .bd-prov-head {
+          font-size: 12px;
+          font-weight: 700;
+          padding: 4px 0 6px 0;
+          border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+          margin-bottom: 6px;
+        }
+        .bd-prov-row {
+          font-size: 14px;
+          font-weight: 700;
+          line-height: 1.5;
+        }
+        </style>
+
+        <div class="bd-prov">
+          <div class="bd-prov-head">Flight Provinces</div>
+          {% map(rows) %}
+          <div class="bd-prov-row">{{ `Flight Provinces`.formatted }}</div>
+          {% end %}
+        </div>
+      ;;
+    }
+  }
+
+  block t_impressions: TextBlock {
+    content: @md
+<div style="font-size:20px;font-weight:700;letter-spacing:0.3px;padding-top:28px;">IMPRESSIONS</div>
+    ;;
+  }
+
+  block v_booked_impressions: VizBlock {
+    label: 'Booked Impressions'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.booked_impressions)
+          label: 'Booked Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-booked-impressions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-booked-impressions {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-booked-impressions {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-booked-impressions">
+          <div class="bd-caption-v-booked-impressions">Booked Impressions</div>
+          <div class="bd-value-v-booked-impressions">{{ rows[0].values.`Booked Impressions`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_impressions: VizBlock {
+    label: 'Impressions'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.served_impressions)
+          label: 'Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-impressions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-impressions {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4; opacity: 1;
+        }
+        .bd-value-v-impressions {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-v-impressions">
+          <div class="bd-caption-v-impressions">Impressions</div>
+          <div class="bd-value-v-impressions">{{ rows[0].values.`Impressions`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_bonus_impressions: VizBlock {
+    label: 'Bonus Impressions'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.bonus_impressions)
+          label: 'Bonus Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-bonus-impressions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-bonus-impressions {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #1FC8B8; opacity: 1;
+        }
+        .bd-value-v-bonus-impressions {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #1FC8B8;
+        }
+        </style>
+
+        <div class="bd-card-v-bonus-impressions">
+          <div class="bd-caption-v-bonus-impressions">Bonus Impressions</div>
+          <div class="bd-value-v-bonus-impressions">{{ rows[0].values.`Bonus Impressions`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block t_contract: TextBlock {
+    content: @md
+<div style="font-size:20px;font-weight:700;letter-spacing:0.3px;padding-top:28px;">CONTRACT AMOUNTS</div>
+    ;;
+  }
+
+  block v_total_contract_cost: VizBlock {
+    label: 'Total Contract Cost'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.total_contract_cost)
+          label: 'Total Contract Cost'
+          format {
+            type: 'number'
+            pattern: '[$$]#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-total-contract-cost {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-total-contract-cost {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-total-contract-cost {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-total-contract-cost">
+          <div class="bd-caption-v-total-contract-cost">Total Contract Cost</div>
+          <div class="bd-value-v-total-contract-cost">{{ rows[0].values.`Total Contract Cost`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_rate_card_value: VizBlock {
+    label: 'Rate Card Value'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.rate_card_value)
+          label: 'Rate Card Value'
+          format {
+            type: 'number'
+            pattern: '[$$]#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-rate-card-value {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-rate-card-value {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4; opacity: 1;
+        }
+        .bd-value-v-rate-card-value {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-v-rate-card-value">
+          <div class="bd-caption-v-rate-card-value">Rate Card Value</div>
+          <div class="bd-value-v-rate-card-value">{{ rows[0].values.`Rate Card Value`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_bonus_value: VizBlock {
+    label: 'Bonus Value'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.bonus_value)
+          label: 'Bonus Value'
+          format {
+            type: 'number'
+            pattern: '[$$]#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-bonus-value {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-bonus-value {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #1FC8B8; opacity: 1;
+        }
+        .bd-value-v-bonus-value {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #1FC8B8;
+        }
+        </style>
+
+        <div class="bd-card-v-bonus-value">
+          <div class="bd-caption-v-bonus-value">Bonus Value</div>
+          <div class="bd-value-v-bonus-value">{{ rows[0].values.`Bonus Value`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  interactions: [
+    FilterInteraction {
+      from: 'f_flight'
+      to: [
+        CustomMapping {
+          block: [
+            'v_campaign_name',
+            'v_date_range',
+            'v_screen_count',
+            'v_provinces',
+            'v_cpm',
+            'v_booked_impressions',
+            'v_impressions',
+            'v_bonus_impressions',
+            'v_total_contract_cost',
+            'v_rate_card_value',
+            'v_bonus_value'
+          ]
+          field: r(vplus_flight_facts.campaign_id)
+        }
+      ]
+    }
+  ]
+
+  view: TabLayout {
+    tab main: CanvasLayout {
+      label: 'Flight Summary'
+      width: 1220
+      height: 1000
+      grid_size: 20
+      auto_expand_vertically: true
+      block t_header { position: pos(20, 140, 880, 80) layer: 1 }
+      block t_logo { position: pos(920, 140, 280, 80) layer: 1 }
+      block f_flight { position: pos(20, 20, 280, 100) layer: 1 }
+      block v_campaign_name { position: pos(20, 260, 1180, 160) layer: 1 }
+      block v_date_range { position: pos(20, 440, 580, 160) layer: 1 }
+      block v_screen_count { position: pos(620, 440, 180, 160) layer: 1 }
+      block v_cpm { position: pos(820, 440, 180, 160) layer: 1 }
+      block v_provinces { position: pos(1020, 440, 180, 160) layer: 1 }
+      block t_impressions { position: pos(20, 620, 280, 120) layer: 1 }
+      block v_booked_impressions { position: pos(320, 620, 280, 120) layer: 1 }
+      block v_impressions { position: pos(620, 620, 280, 120) layer: 1 }
+      block v_bonus_impressions { position: pos(920, 620, 280, 120) layer: 1 }
+      block t_contract { position: pos(20, 760, 280, 120) layer: 1 }
+      block v_total_contract_cost { position: pos(320, 760, 280, 120) layer: 1 }
+      block v_rate_card_value { position: pos(620, 760, 280, 120) layer: 1 }
+      block v_bonus_value { position: pos(920, 760, 280, 120) layer: 1 }
+      mobile { mode: 'auto' }
+    }
+  }
+}

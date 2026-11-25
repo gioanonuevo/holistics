@@ -1,0 +1,51 @@
+Model data_pipeline_raw_ads {
+  type: 'table'
+  label: 'Raw Ads'
+  description: ''
+  data_source_name: 'vc_data_warehouse'
+  dimension id {
+    label: 'Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.id }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension title {
+    label: 'Title'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.title }};;
+  }
+  dimension start_date {
+    label: 'Start Date'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_date }};;
+  }
+  dimension end_date {
+    label: 'End Date'
+    type: 'datetime'
+    hidden: false
+    definition: @sql {{ #SOURCE.end_date }};;
+  }
+  dimension type {
+    label: 'Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.type }};;
+  }
+  dimension duration {
+    label: 'Duration'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.duration }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  table_name: '`data_pipeline`.`raw_ads`'
+}

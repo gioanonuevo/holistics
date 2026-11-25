@@ -8,14 +8,25 @@ Dataset vplus_delivery {
   models: [
     vplus_flight_facts,
     vplus_served_impressions,
-    data_pipeline_campaign_reporting_campaigns,
-    data_pipeline_elev8_ads_ads,
+    vplus_flight_screens,
+    data_pipeline_raw_ads,
     data_pipeline_raw_campaigns
   ]
 
   relationships: [
-    relationship(vplus_served_impressions.campaign_id > vplus_flight_facts.campaign_id, true, direction: 'two_way')
+    relationship(vplus_served_impressions.campaign_id > vplus_flight_facts.campaign_id, true, direction: 'two_way'),
+    relationship(vplus_flight_screens.campaign_id > vplus_flight_facts.campaign_id, true)
   ]
+
+  // ---- Basic Dashboard: screens that played the flight (plays_summary) ----
+
+  metric screen_count {
+    label: 'Screen Count'
+    type: 'number'
+    description: 'Distinct screens (mac_address) that played the selected flights inside the flight window (plays_summary).'
+    definition: @aql count_distinct(vplus_flight_screens.mac_address);;
+    format: '#,###'
+  }
 
   // ---- Looker flights_summary measures, summed over the selected flights ----
 
