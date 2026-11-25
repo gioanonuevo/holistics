@@ -301,6 +301,15 @@ Join audit and fixes (all verified on 10605 after the change):
 
 Design caveat (not changed): property attributes reach attention_base only through screens (device_id -> MAC -> property).
 A device missing from `screens` loses its province / FSA / property type even though attention_base has property_id.
+
+**2026-11-25: `creative_groups_lu`** (query model over `data_pipeline.stg_client_dashboard_creative_groups_lu`,
+`creative_id` cast to text and deduplicated with `QUALIFY ROW_NUMBER()`, dims `creative_group`, `creative_group2`),
+related `attention_base.ad_id > creative_groups_lu.creative_id` (active, leaf model like `creative_img`). It carries
+the client-dashboard creative grouping into the deck pipeline's report extract (`creative_grouping` toggle). Coverage
+checked: all 15 ads of 10605 and the 4 of The Gathering have a `creative_group` (e.g. 101691 = "72 Hours",
+101692-4 = "Join Us"); `creative_group2` is null for them. Validated and synced to development; **production needs a
+publish before the pipeline's `extract --force` can see the field.** A cloud-made table model
+`data_pipeline_stg_client_dashboard_creative_groups_lu` (raw table, no dedup) also exists and is not in any dataset.
 A direct `attention_base.property_id > properties.id` relationship would be more robust, but it would create a second
 path to properties, so the screens -> properties relationship would then have to become inactive. Decide with the user.
 

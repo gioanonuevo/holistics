@@ -1,0 +1,35 @@
+Model creative_groups_lu {
+  type: 'query'
+  label: 'Creative Groups (client dashboard lookup)'
+  description: 'One row per creative id from data_pipeline.stg_client_dashboard_creative_groups_lu: the client-dashboard creative grouping (creative_group, creative_group2) the old V+ notebook used. Joined to attention_base on ad_id so the deck pipeline can fold ads into named groups when its creative_grouping toggle is on.'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  dimension creative_id {
+    label: 'Creative Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.creative_id }};;
+  }
+  dimension creative_group {
+    label: 'Creative Group'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.creative_group }};;
+  }
+  dimension creative_group2 {
+    label: 'Creative Group 2'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.creative_group2 }};;
+  }
+
+  query: @sql
+    -- creative_id is text so it joins attention_base.ad_id. One row per creative: a duplicated
+    -- id would multiply attention rows through the relationship, so the first row wins.
+    SELECT cast(creative_id as string) as creative_id, creative_group, creative_group2
+    FROM `data_pipeline.stg_client_dashboard_creative_groups_lu`
+    WHERE creative_id IS NOT NULL
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY cast(creative_id as string) ORDER BY creative_group, creative_group2) = 1
+  ;;
+}

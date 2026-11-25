@@ -13,6 +13,7 @@ Dataset attention {
     data_pipeline_stg_campaigns
     ,
     creative_img,
+    creative_groups_lu,
     properties,
     screens
   ]
@@ -28,7 +29,9 @@ Dataset attention {
     ,
     relationship(screens.property_id > properties.id, true)
     ,
-    relationship(attention_base.ad_id > creative_img.ads_id, true)
+    relationship(attention_base.ad_id > creative_img.ads_id, true),
+    // client-dashboard creative grouping (deck pipeline toggle)
+    relationship(attention_base.ad_id > creative_groups_lu.creative_id, true)
   ]
 
   metric selected_campaign_start_date {
