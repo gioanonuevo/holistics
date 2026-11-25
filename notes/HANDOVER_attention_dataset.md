@@ -310,6 +310,11 @@ checked: all 15 ads of 10605 and the 4 of The Gathering have a `creative_group` 
 101692-4 = "Join Us"); `creative_group2` is null for them. Validated and synced to development; **production needs a
 publish before the pipeline's `extract --force` can see the field.** A cloud-made table model
 `data_pipeline_stg_client_dashboard_creative_groups_lu` (raw table, no dedup) also exists and is not in any dataset.
+
+Same day, `creative_img` gained `ad_name`: `raw_ads.title` on the raw-id branch, `elev8_ads_ads.name` on the
+ad_number branch (the one the attention ad ids hit; raw_ads.id never matches a 1016xx ad, which is why the first
+attempt returned null everywhere). For 10605 the names are internal codes ("1000062661 RES 5am - 11:59pm"); the deck
+pipeline uses them only when no config name or group exists.
 A direct `attention_base.property_id > properties.id` relationship would be more robust, but it would create a second
 path to properties, so the screens -> properties relationship would then have to become inactive. Decide with the user.
 

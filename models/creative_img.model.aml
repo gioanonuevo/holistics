@@ -21,6 +21,12 @@ Model creative_img {
     hidden: false
     definition: @sql {{ #SOURCE.creative_img }};;
   }
+  dimension ad_name {
+    label: 'Ad Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_name }};;
+  }
   dimension smart_moc {
     label: 'Smart Moc'
     type: 'text'
@@ -32,11 +38,12 @@ Model creative_img {
   query: @sql
     -- ads_id is text so it joins attention_base.ad_id (text; Programmatic ids are hex strings).
     -- One row per ad: the raw_ads row wins, then the elev8_ads_ads row.
-    SELECT ads_id, media_type, creative_img, smart_moc
+    -- ad_name: raw_ads.title for raw ids, elev8_ads_ads.name for ad_number ids (the attention ad ids).
+    SELECT ads_id, media_type, creative_img, smart_moc, ad_name
     FROM (
     SELECT *, 1 as src
     FROM
-    (SELECT distinct cast(ads.id as string) as ads_id,media.type as media_type, concat('https://elev8app-production.s3.amazonaws.com/',key) as creative_img,'https://drive.google.com/thumbnail?id=1E44-__eCuF_ymcQ1VeatROd5AujCRuys&sz=w500' as smart_moc
+    (SELECT distinct cast(ads.id as string) as ads_id,media.type as media_type, concat('https://elev8app-production.s3.amazonaws.com/',key) as creative_img,'https://drive.google.com/thumbnail?id=1E44-__eCuF_ymcQ1VeatROd5AujCRuys&sz=w500' as smart_moc, ads.title as ad_name
           FROM `tech-data-warehouse.raw_elev8_backend.raw_ads` as ads
           INNER JOIN `tech-data-warehouse.raw_elev8_backend.raw_media`as media
           ON ads.media_id = media.id
@@ -46,7 +53,7 @@ Model creative_img {
           ON storage_attachments.blob_id = storage_blobs.id
           WHERE NOT storage_attachments.__hevo__marked_deleted)
     UNION ALL
-    (select cast(ad_number as string),type,CONCAT('https://ads.verticalimpression.com/api/ad_thumbnails/',ad_number),'https://drive.google.com/thumbnail?id=1E44-__eCuF_ymcQ1VeatROd5AujCRuys&sz=w800' as smart_moc, 2 as src
+    (select cast(ad_number as string),type,CONCAT('https://ads.verticalimpression.com/api/ad_thumbnails/',ad_number),'https://drive.google.com/thumbnail?id=1E44-__eCuF_ymcQ1VeatROd5AujCRuys&sz=w800' as smart_moc, name as ad_name, 2 as src
     from `data_pipeline.elev8_ads_ads`)
     )
     WHERE ads_id IS NOT NULL
