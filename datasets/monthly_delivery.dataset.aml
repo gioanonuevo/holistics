@@ -1,0 +1,14 @@
+@tag('Status/Draft')
+Dataset monthly_delivery {
+  label: 'Monthly Delivery'
+  description: 'Monthly campaign delivery report: one row per campaign whose flight overlaps the report period, with impressions for the period, for the three months before it and for all time. Set the period through the monthly_campaign_impressions.report_period param (a date range, normally last month).'
+  data_source_name: 'vc_data_warehouse'
+  owner: 'ganonuevo@verticalcity.com'
+
+  models: [
+    monthly_campaign_impressions
+  ]
+
+  relationships: [
+  ]
+}

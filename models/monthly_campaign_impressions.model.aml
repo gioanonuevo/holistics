@@ -1,7 +1,7 @@
 Model monthly_campaign_impressions {
   type: 'query'
   label: 'Monthly Campaign Impressions'
-  description: 'Monthly billing report, rebuilt from the Looker query of the same shape: one row per campaign (data_pipeline.raw_campaigns) whose flight overlaps the report period, with impressions from data_pipeline.plays_summary for the period (This Month), for the three months before it (Previous 3 Months) and for all time (Total). The report period comes from the report_period param: one date range replaces the two Looker filters (start_date on or after, end_date before). Bind a dashboard date control to the param and set it to last month. With no value the period is every date, so all campaigns are returned and This Month equals Total.'
+  description: 'Monthly delivery report, rebuilt from the Looker query of the same shape: one row per campaign (data_pipeline.raw_campaigns) whose flight overlaps the report period, with impressions from data_pipeline.plays_summary for the period (This Month), for the three months before it (Previous 3 Months) and for all time (Total). The report period comes from the report_period param: one date range replaces the two Looker filters (start_date on or after, end_date before). Bind a dashboard date control to the param and set it to last month. With no value the period is every date, so all campaigns are returned and This Month equals Total.'
   data_source_name: 'vc_data_warehouse'
 
   param report_period {

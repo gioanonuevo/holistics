@@ -1,7 +1,7 @@
 @tag('Status/Draft')
-Dashboard monthly_billing_report {
-  title: 'Monthly Billing Report'
-  description: @md Campaign impressions for one month, for billing: every active or complete campaign whose flight overlaps the month, with its impressions for the month, for the three months before it and in total. Set to last month by default and meant to be emailed on the 1st of each month. ;;
+Dashboard monthly_delivery_report {
+  title: 'Monthly Delivery Report'
+  description: @md Campaign impressions delivered in one month: every active or complete campaign whose flight overlaps the month, with its impressions for the month, for the three months before it and in total. Set to last month by default and meant to be emailed on the 1st of each month. ;;
   owner: 'ganonuevo@verticalcity.com'
   theme: H.themes.classic
 
@@ -15,7 +15,7 @@ Dashboard monthly_billing_report {
     label: 'Report Month'
     type: 'date'
     source: FieldFilterSource {
-      dataset: monthly_billing
+      dataset: monthly_delivery
       field: r(monthly_campaign_impressions.report_period)
     }
     default {
@@ -26,7 +26,7 @@ Dashboard monthly_billing_report {
 
   block t_title: TextBlock {
     content: @md
-## Monthly Billing Report
+## Monthly Delivery Report
 
 One row per campaign whose flight overlaps the selected month. **This Month** is impressions played in the month, **Previous 3 Months** is the three months before it, **Total** is everything played to date. Pick a whole month in the control; it defaults to last month.
     ;;
@@ -35,7 +35,7 @@ One row per campaign whose flight overlaps the selected month. **This Month** is
   block v_report: VizBlock {
     label: 'Campaign impressions for the month'
     viz: DataTable {
-      dataset: monthly_billing
+      dataset: monthly_delivery
       fields: [
         VizFieldFull { ref: r(monthly_campaign_impressions.rsm_oms_id) label: 'rsm_oms_id' format { type: 'text' } },
         VizFieldFull { ref: r(monthly_campaign_impressions.rsm_flight_id) label: 'rsm_flight_id' format { type: 'text' } },
@@ -80,7 +80,7 @@ One row per campaign whose flight overlaps the selected month. **This Month** is
 
   view: TabLayout {
     tab main: CanvasLayout {
-      label: 'Monthly Billing Report'
+      label: 'Monthly Delivery Report'
       width: 1220
       height: 1000
       grid_size: 20
