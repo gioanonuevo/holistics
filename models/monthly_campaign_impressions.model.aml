@@ -1,0 +1,163 @@
+Model monthly_campaign_impressions {
+  type: 'query'
+  label: 'Monthly Campaign Impressions'
+  description: 'Monthly billing report, rebuilt from the Looker query of the same shape: one row per campaign (data_pipeline.raw_campaigns) whose flight overlaps the report period, with impressions from data_pipeline.plays_summary for the period (This Month), for the three months before it (Previous 3 Months) and for all time (Total). The report period comes from the report_period param: one date range replaces the two Looker filters (start_date on or after, end_date before). Bind a dashboard date control to the param and set it to last month. With no value the period is every date, so all campaigns are returned and This Month equals Total.'
+  data_source_name: 'vc_data_warehouse'
+
+  param report_period {
+    label: 'Report Period'
+    type: 'date'
+  }
+
+  dimension rsm_oms_id {
+    label: 'RSM OMS ID'
+    type: 'text'
+    hidden: false
+    description: 'Blank placeholder column, as in the Looker report.'
+    definition: @sql {{ #SOURCE.rsm_oms_id }};;
+  }
+  dimension rsm_flight_id {
+    label: 'RSM Flight ID'
+    type: 'text'
+    hidden: false
+    description: 'Blank placeholder column, as in the Looker report.'
+    definition: @sql {{ #SOURCE.rsm_flight_id }};;
+  }
+  dimension name {
+    label: 'Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.name }};;
+  }
+  dimension id {
+    label: 'ID'
+    type: 'number'
+    hidden: false
+    description: 'raw_campaigns.id (flight id).'
+    definition: @sql {{ #SOURCE.id }};;
+  }
+  dimension campaign_type {
+    label: 'Campaign Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_type }};;
+  }
+  dimension billable_start {
+    label: 'Billable Start'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.billable_start }};;
+  }
+  dimension billable_end {
+    label: 'Billable End'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.billable_end }};;
+  }
+  dimension previous_3_months {
+    label: 'Previous 3 Months'
+    type: 'number'
+    hidden: false
+    description: 'Impressions played in the three months before the report period.'
+    definition: @sql {{ #SOURCE.previous_3_months }};;
+  }
+  dimension this_month {
+    label: 'This Month'
+    type: 'number'
+    hidden: false
+    description: 'Impressions played inside the report period.'
+    definition: @sql {{ #SOURCE.this_month }};;
+  }
+  dimension total {
+    label: 'Total'
+    type: 'number'
+    hidden: false
+    description: 'All impressions ever played for the campaign.'
+    definition: @sql {{ #SOURCE.total }};;
+  }
+  dimension booked_impressions {
+    label: 'Booked Impressions'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.booked_impressions }};;
+  }
+  dimension price {
+    label: 'Price'
+    type: 'number'
+    hidden: false
+    description: 'standard_price_cents / 100.'
+    definition: @sql {{ #SOURCE.price }};;
+  }
+  dimension creative_size {
+    label: 'Creative Size'
+    type: 'text'
+    hidden: false
+    description: '700X960 when fullscreen = 0, else 768X1368.'
+    definition: @sql {{ #SOURCE.creative_size }};;
+  }
+  dimension period_start {
+    label: 'Report Period Start'
+    type: 'date'
+    hidden: false
+    description: 'First day of the report period the row was computed for.'
+    definition: @sql {{ #SOURCE.period_start }};;
+  }
+  dimension period_end {
+    label: 'Report Period End'
+    type: 'date'
+    hidden: false
+    description: 'Last day of the report period the row was computed for.'
+    definition: @sql {{ #SOURCE.period_end }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    -- The report period (one date range) is resolved to its first day and the day after its last
+    -- day. Those two bounds play the roles of the Looker filters start_date (on or after) and
+    -- end_date (before).
+    WITH period AS (
+      SELECT
+        MIN(d) AS period_start,
+        DATE_ADD(MAX(d), INTERVAL 1 DAY) AS period_end_exclusive
+      FROM UNNEST(GENERATE_DATE_ARRAY(DATE '2015-01-01', DATE_ADD(CURRENT_DATE(), INTERVAL 1 YEAR))) AS d
+      WHERE {% filter(report_period) %} d {% end %}
+    )
+    SELECT
+      '' AS rsm_oms_id,
+      '' AS rsm_flight_id,
+      c.name,
+      CAST(c.id AS INT64) AS id,
+      c.campaign_type,
+      DATE(c.start_at) AS billable_start,
+      DATE(c.end_at) AS billable_end,
+      SUM(CASE
+            WHEN DATE_ADD(DATE(p.date), INTERVAL 3 MONTH) >= period.period_start
+             AND DATE_ADD(DATE(p.date), INTERVAL 1 MONTH) < period.period_end_exclusive
+            THEN p.impressions
+          END) AS previous_3_months,
+      SUM(CASE
+            WHEN DATE(p.date) >= period.period_start
+             AND DATE(p.date) < period.period_end_exclusive
+            THEN p.impressions
+          END) AS this_month,
+      SUM(p.impressions) AS total,
+      c.booked_impressions,
+      c.standard_price_cents / 100 AS price,
+      CASE WHEN c.fullscreen = 0 THEN '700X960' ELSE '768X1368' END AS creative_size,
+      period.period_start,
+      DATE_SUB(period.period_end_exclusive, INTERVAL 1 DAY) AS period_end
+    FROM `tech-data-warehouse.data_pipeline.raw_campaigns` c
+    INNER JOIN `data_pipeline.plays_summary` p
+      ON CAST(c.id AS STRING) = p.campaign_id
+    CROSS JOIN period
+    WHERE DATE(c.end_at) >= period.period_start
+      AND TIMESTAMP(c.start_at) < TIMESTAMP(period.period_end_exclusive)
+      AND LOWER(c.status) IN ('active', 'complete')
+      AND LOWER(c.campaign_type) IN ('rsm_local', 'local', 'rsm_national', 'national', 'complimentary', 'advertising')
+    GROUP BY
+      c.name, c.id, c.status, c.campaign_type, c.start_at, c.end_at,
+      c.booked_impressions, c.standard_price_cents, c.fullscreen,
+      period.period_start, period.period_end_exclusive;;
+  models: [
+  ]
+}

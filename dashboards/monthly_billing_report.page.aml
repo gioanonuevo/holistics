@@ -1,0 +1,94 @@
+@tag('Status/Draft')
+Dashboard monthly_billing_report {
+  title: 'Monthly Billing Report'
+  description: @md Campaign impressions for one month, for billing: every active or complete campaign whose flight overlaps the month, with its impressions for the month, for the three months before it and in total. Set to last month by default and meant to be emailed on the 1st of each month. ;;
+  owner: 'ganonuevo@verticalcity.com'
+  theme: H.themes.classic
+
+  // ---------------------------------------------------------------------------
+  // One date control on the monthly_campaign_impressions.report_period PARAM. It replaces the
+  // two Looker filters (start_date on or after / end_date before): the model takes the first
+  // and last day of the chosen range. The default "last month" is what the monthly email
+  // schedule relies on.
+  // ---------------------------------------------------------------------------
+  block report_period: FilterBlock {
+    label: 'Report Month'
+    type: 'date'
+    source: FieldFilterSource {
+      dataset: monthly_billing
+      field: r(monthly_campaign_impressions.report_period)
+    }
+    default {
+      operator: 'matches'
+      value: 'last month'
+    }
+  }
+
+  block t_title: TextBlock {
+    content: @md
+## Monthly Billing Report
+
+One row per campaign whose flight overlaps the selected month. **This Month** is impressions played in the month, **Previous 3 Months** is the three months before it, **Total** is everything played to date. Pick a whole month in the control; it defaults to last month.
+    ;;
+  }
+
+  block v_report: VizBlock {
+    label: 'Campaign impressions for the month'
+    viz: DataTable {
+      dataset: monthly_billing
+      fields: [
+        VizFieldFull { ref: r(monthly_campaign_impressions.rsm_oms_id) label: 'rsm_oms_id' format { type: 'text' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.rsm_flight_id) label: 'rsm_flight_id' format { type: 'text' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.name) label: 'Name' format { type: 'text' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.id) label: 'ID' format { type: 'number' pattern: '0' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.campaign_type) label: 'Campaign Type' format { type: 'text' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.billable_start) label: 'Billable Start' format { type: 'date' pattern: 'yyyy-MM-dd' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.billable_end) label: 'Billable End' format { type: 'date' pattern: 'yyyy-MM-dd' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.previous_3_months) label: 'Previous3Months' format { type: 'number' pattern: '#,###' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.this_month) label: 'ThisMonth' format { type: 'number' pattern: '#,###' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.total) label: 'Total' format { type: 'number' pattern: '#,###' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.booked_impressions) label: 'Booked Impressions' format { type: 'number' pattern: '#,###' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.price) label: 'Price' format { type: 'number' pattern: '#,###0.00' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.creative_size) label: 'Creative Size' format { type: 'text' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.period_start) label: 'Period Start' format { type: 'date' pattern: 'yyyy-MM-dd' } },
+        VizFieldFull { ref: r(monthly_campaign_impressions.period_end) label: 'Period End' format { type: 'date' pattern: 'yyyy-MM-dd' } }
+      ]
+      settings {
+        show_row_number: false
+        row_limit: 5000
+        sorts: [
+          IndexBasedSortSetting {
+            field_index: 3
+            direction: 'asc'
+          }
+        ]
+      }
+    }
+  }
+
+  interactions: [
+    FilterInteraction {
+      from: 'report_period'
+      to: [
+        CustomMapping {
+          block: ['v_report']
+          field: r(monthly_campaign_impressions.report_period)
+        }
+      ]
+    }
+  ]
+
+  view: TabLayout {
+    tab main: CanvasLayout {
+      label: 'Monthly Billing Report'
+      width: 1220
+      height: 1000
+      grid_size: 20
+      auto_expand_vertically: true
+      block t_title { position: pos(20, 20, 880, 120) layer: 1 }
+      block report_period { position: pos(920, 20, 280, 100) layer: 1 }
+      block v_report { position: pos(20, 160, 1180, 800) layer: 1 }
+      mobile { mode: 'auto' }
+    }
+  }
+}
