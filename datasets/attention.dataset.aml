@@ -14,6 +14,7 @@ Dataset attention {
     ,
     creative_img,
     creative_groups_lu,
+    ad_facts,
     properties,
     screens
   ]
@@ -31,8 +32,91 @@ Dataset attention {
     ,
     relationship(attention_base.ad_id > creative_img.ads_id, true),
     // client-dashboard creative grouping (deck pipeline toggle)
-    relationship(attention_base.ad_id > creative_groups_lu.creative_id, true)
+    relationship(attention_base.ad_id > creative_groups_lu.creative_id, true),
+    // ad name, type, run dates and progress (Looker ads view) for the Core Dashboard creative table
+    relationship(attention_base.ad_id > ad_facts.ad_id, true)
   ]
+
+  // ---------------------------------------------------------------------------
+  // Core Dashboard (Looker In-Flight Campaign Optimization Dashboard) metrics
+  // ---------------------------------------------------------------------------
+
+  metric active_attention_datapoints {
+    label: 'Active Attention Datapoints'
+    type: 'number'
+    description: 'Datapoints of the selected campaign or ad with attention of 2.5 seconds or longer (exposure category Message Exposure).'
+    definition: @aql
+      count(attention_base.uuid)
+      | where(
+          attention_base.ad_id is not null,
+          attention_base.attention_seconds is not null,
+          attention_base.exposure_category == 'Message Exposure'
+        )
+      | with_relationships(attention_base.ad_id > data_pipeline_stg_campaigns.ad_id)
+    ;;
+    format: '#,###'
+  }
+
+  metric active_attention_rate {
+    label: 'Active Attention'
+    type: 'number'
+    description: 'Share of the selected campaign or ad datapoints with attention of 2.5 seconds or longer.'
+    definition: @aql safe_divide(active_attention_datapoints, campaign_datapoints);;
+    format: '0.0%'
+  }
+
+  metric attention_vs_digital_dooh {
+    label: 'vs avg Digital/DOOH'
+    type: 'number'
+    description: 'Campaign Average Attention Seconds against the 1.5 second Digital/DOOH benchmark: (campaign - 1.5) / 1.5.'
+    definition: @aql safe_divide(campaign_average_attention_seconds - 1.5, 1.5);;
+    format: '0.0%'
+  }
+
+  metric attention_vs_traditional_ooh {
+    label: 'vs avg Traditional OOH'
+    type: 'number'
+    description: 'Campaign Average Attention Seconds against the Traditional OOH benchmark. The Looker tile uses 1.75 seconds (5.1997 s gives +197.1%), although its caption says around 2 seconds.'
+    definition: @aql safe_divide(campaign_average_attention_seconds - 1.75, 1.75);;
+    format: '0.0%'
+  }
+
+  metric attention_vs_network_label {
+    label: 'Attention Seconds vs Network'
+    type: 'text'
+    description: 'Above Average, Below Average or Average, from the sign of Attention vs Network Average at the current grouping. The Looker tile shows the same wording; its exact threshold is not in the LookML export.'
+    definition: @aql
+      case(
+        when: attention_vs_network > 0, then: 'Above Average',
+        when: attention_vs_network < 0, then: 'Below Average',
+        else: 'Average'
+      )
+    ;;
+  }
+
+  metric gender_average_attention_seconds {
+    label: 'Gender Average Attention Seconds'
+    type: 'number'
+    description: 'Average attention of the selected campaign or ad events for the gender of the row, ignoring every other breakdown. Denominator of Attention vs Gender Average.'
+    definition: @aql
+      attention_seconds_average
+      | keep_grains(attention_base.gender, keep_filters: true)
+    ;;
+    format: 'none'
+  }
+
+  metric attention_vs_gender_average {
+    label: 'Attention vs Gender Average'
+    type: 'number'
+    description: 'Relative difference between the row attention and the campaign average of the same gender. This is the Attention column of the Looker Ad Attention by Demographic table (gender x age group).'
+    definition: @aql
+      safe_divide(
+        attention_seconds_average - gender_average_attention_seconds,
+        gender_average_attention_seconds
+      )
+    ;;
+    format: '0.00%'
+  }
 
   metric selected_campaign_start_date {
     label: 'Selected Campaign Start Date'

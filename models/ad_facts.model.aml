@@ -1,0 +1,77 @@
+Model ad_facts {
+  type: 'query'
+  label: 'Ad Facts'
+  description: 'One row per ad from data_pipeline.raw_ads, the source of the Looker ads view: name (title), type, run dates, the formatted date range and date progress (share of the run that has elapsed, capped at 100%). ad_id is text so it joins attention_base.ad_id. Leaf model for the Ad Creative Performance table on the Core Dashboard.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension ad_id {
+    label: 'Ad ID'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.ad_id }};;
+  }
+  dimension campaign_id {
+    label: 'Campaign ID'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension name {
+    label: 'Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.name }};;
+  }
+  dimension type {
+    label: 'Type'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.type }};;
+  }
+  dimension start_date {
+    label: 'Start Date'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.start_date }};;
+  }
+  dimension end_date {
+    label: 'End Date'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.end_date }};;
+  }
+  dimension date_range {
+    label: 'Date Range'
+    type: 'text'
+    hidden: false
+    description: 'Looker ads.date_range: "Aug 12, 2026 - Sep 07, 2026".'
+    definition: @sql {{ #SOURCE.date_range }};;
+  }
+  dimension date_progress {
+    label: 'Date Progress'
+    type: 'number'
+    hidden: false
+    description: 'Looker ads.date_progress: days since the start / days in the run, capped at 1.'
+    definition: @sql {{ #SOURCE.date_progress }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    SELECT
+      CAST(CAST(id AS INT64) AS STRING) AS ad_id,
+      CAST(CAST(campaign_id AS INT64) AS STRING) AS campaign_id,
+      TRIM(title) AS name,
+      type,
+      DATE(start_date) AS start_date,
+      DATE(end_date) AS end_date,
+      CONCAT(FORMAT_DATE('%b %d, %Y', DATE(start_date)), ' - ', FORMAT_DATE('%b %d, %Y', DATE(end_date))) AS date_range,
+      CASE
+        WHEN SAFE_DIVIDE(DATE_DIFF(CURRENT_DATE(), DATE(start_date), DAY), DATE_DIFF(DATE(end_date) + 1, DATE(start_date), DAY)) > 1 THEN 1
+        ELSE ROUND(SAFE_DIVIDE(DATE_DIFF(CURRENT_DATE(), DATE(start_date), DAY), DATE_DIFF(DATE(end_date) + 1, DATE(start_date), DAY)), 2)
+      END AS date_progress
+    FROM `data_pipeline.raw_ads`
+    WHERE id IS NOT NULL
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY start_date DESC) = 1;;
+  models: [
+  ]
+}

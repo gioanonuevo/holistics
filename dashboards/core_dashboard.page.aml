@@ -1,0 +1,1604 @@
+@tag('Status/Draft')
+Dashboard core_dashboard {
+  title: 'Core Dashboard'
+  description: @md In-flight view of one campaign: flight summary, attention against other media and the network, attention over time, audience by gender and age, creative performance and impressions by week, property and city. Rebuilt from the Looker In-Flight Campaign Optimization Dashboard (Internal). Pick a flight id at the top to load a campaign. ;;
+  owner: 'ganonuevo@verticalcity.com'
+  theme: H.themes.classic
+
+  // ---------------------------------------------------------------------------
+  // One control drives both datasets through per-block field mappings (see interactions):
+  //   vplus_delivery blocks -> the flight id dimension (raw_campaigns.id)
+  //   attention blocks      -> the attention_base.report_filter PARAM (clips the flight window);
+  //                            they also carry the condition
+  //                            filter_model.report_filter in attention_base.report_filter
+  // Confirmed in the UI on 2026-11-27: a dimension-sourced control does feed the param when it
+  // is mapped explicitly with CustomMapping. The default is kept on purpose: an empty control
+  // means all flights.
+  // ---------------------------------------------------------------------------
+  block flight_id: FilterBlock {
+    label: 'Flight ID'
+    type: 'field'
+    source: FieldFilterSource {
+      dataset: vplus_delivery
+      field: r(vplus_flight_facts.campaign_id)
+    }
+    default {
+      operator: 'is'
+      value: ['10605']
+    }
+    settings {
+      input_type: 'multiple'
+    }
+  }
+
+  block t_header: TextBlock {
+    content: @md
+<div style="background:#6C4DC4;color:#ffffff;font-weight:700;letter-spacing:1px;font-size:16px;padding:14px 18px;clip-path:polygon(0 0,100% 0,98% 100%,0 100%);">FLIGHT SUMMARY</div>
+    ;;
+  }
+
+  block t_logo: TextBlock {
+    content: @md
+<div style="text-align:right;padding:8px 12px 0 0;"><img src="https://uploads-ssl.webflow.com/5de034f7b1a94eee0c714fde/5e879e904fbaeaf7b6177f84_VI_Logo_140px.png" alt="Vertical Impression" style="height:44px;width:auto;" /></div>
+    ;;
+  }
+
+  block v_date_range: VizBlock {
+    label: 'Date Range'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.flight_start)
+          label: 'Flight Start'
+          format {
+            type: 'date'
+            pattern: 'LLL d, yyyy'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_delivery.flight_end)
+          label: 'Flight End'
+          format {
+            type: 'date'
+            pattern: 'LLL d, yyyy'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-date-range {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-date-range {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-date-range {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-date-range">
+          <div class="bd-caption-v-date-range">Date Range</div>
+          <div class="bd-value-v-date-range">{{ rows[0].values.`Flight Start`.formatted }} - {{ rows[0].values.`Flight End`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_screen_count: VizBlock {
+    label: 'Screen Count'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.screen_count)
+          label: 'Screen Count'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-screen-count {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-screen-count {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-screen-count {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-screen-count">
+          <div class="bd-caption-v-screen-count">Screen Count</div>
+          <div class="bd-value-v-screen-count">{{ rows[0].values.`Screen Count`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_cpm: VizBlock {
+    label: 'CPM'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.cpm)
+          label: 'CPM'
+          format {
+            type: 'number'
+            pattern: '[$$]#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-cpm {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-cpm {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-cpm {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-cpm">
+          <div class="bd-caption-v-cpm">CPM</div>
+          <div class="bd-value-v-cpm">{{ rows[0].values.`CPM`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_provinces: VizBlock {
+    label: 'Flight Provinces'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      rows: [
+        VizFieldFull {
+          ref: r(vplus_flight_screens.province)
+          label: 'Flight Provinces'
+        }
+      ]
+      content: @md
+        <style>
+        .bd-prov {
+          text-align: center;
+          height: 100%;
+          box-sizing: border-box;
+          color: inherit;
+        }
+        .bd-prov-head {
+          font-size: 12px;
+          font-weight: 700;
+          padding: 4px 0 6px 0;
+          border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+          margin-bottom: 6px;
+        }
+        .bd-prov-row {
+          font-size: 14px;
+          font-weight: 700;
+          line-height: 1.5;
+        }
+        </style>
+
+        <div class="bd-prov">
+          <div class="bd-prov-head">Flight Provinces</div>
+          {% map(rows) %}
+          <div class="bd-prov-row">{{ `Flight Provinces`.formatted }}</div>
+          {% end %}
+        </div>
+      ;;
+    }
+  }
+
+  block t_impressions: TextBlock {
+    content: @md
+<div style="font-size:20px;font-weight:700;letter-spacing:0.3px;padding-top:28px;">IMPRESSIONS</div>
+    ;;
+  }
+
+  block v_booked_impressions: VizBlock {
+    label: 'Booked Impressions'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.booked_impressions)
+          label: 'Booked Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-booked-impressions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-booked-impressions {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-booked-impressions {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-booked-impressions">
+          <div class="bd-caption-v-booked-impressions">Booked Impressions</div>
+          <div class="bd-value-v-booked-impressions">{{ rows[0].values.`Booked Impressions`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_impressions: VizBlock {
+    label: 'Impressions'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.served_impressions)
+          label: 'Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-impressions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-impressions {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4; opacity: 1;
+        }
+        .bd-value-v-impressions {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-v-impressions">
+          <div class="bd-caption-v-impressions">Impressions</div>
+          <div class="bd-value-v-impressions">{{ rows[0].values.`Impressions`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_bonus_impressions: VizBlock {
+    label: 'Bonus Impressions'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.bonus_impressions)
+          label: 'Bonus Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-bonus-impressions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-bonus-impressions {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #1FC8B8; opacity: 1;
+        }
+        .bd-value-v-bonus-impressions {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #1FC8B8;
+        }
+        </style>
+
+        <div class="bd-card-v-bonus-impressions">
+          <div class="bd-caption-v-bonus-impressions">Bonus Impressions</div>
+          <div class="bd-value-v-bonus-impressions">{{ rows[0].values.`Bonus Impressions`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block t_contract: TextBlock {
+    content: @md
+<div style="font-size:20px;font-weight:700;letter-spacing:0.3px;padding-top:28px;">CONTRACT AMOUNTS</div>
+    ;;
+  }
+
+  block v_total_contract_cost: VizBlock {
+    label: 'Total Contract Cost'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.total_contract_cost)
+          label: 'Total Contract Cost'
+          format {
+            type: 'number'
+            pattern: '[$$]#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-total-contract-cost {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-total-contract-cost {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: inherit; opacity: 0.65;
+        }
+        .bd-value-v-total-contract-cost {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: inherit;
+        }
+        </style>
+
+        <div class="bd-card-v-total-contract-cost">
+          <div class="bd-caption-v-total-contract-cost">Total Contract Cost</div>
+          <div class="bd-value-v-total-contract-cost">{{ rows[0].values.`Total Contract Cost`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_rate_card_value: VizBlock {
+    label: 'Rate Card Value'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.rate_card_value)
+          label: 'Rate Card Value'
+          format {
+            type: 'number'
+            pattern: '[$$]#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-rate-card-value {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-rate-card-value {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4; opacity: 1;
+        }
+        .bd-value-v-rate-card-value {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-v-rate-card-value">
+          <div class="bd-caption-v-rate-card-value">Rate Card Value</div>
+          <div class="bd-value-v-rate-card-value">{{ rows[0].values.`Rate Card Value`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block v_bonus_value: VizBlock {
+    label: 'Bonus Value'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: vplus_delivery
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.bonus_value)
+          label: 'Bonus Value'
+          format {
+            type: 'number'
+            pattern: '[$$]#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-v-bonus-value {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-caption-v-bonus-value {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #1FC8B8; opacity: 1;
+        }
+        .bd-value-v-bonus-value {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #1FC8B8;
+        }
+        </style>
+
+        <div class="bd-card-v-bonus-value">
+          <div class="bd-caption-v-bonus-value">Bonus Value</div>
+          <div class="bd-value-v-bonus-value">{{ rows[0].values.`Bonus Value`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block t_attention_banner: TextBlock {
+    content: @md
+<div style="background:#6C4DC4;color:#ffffff;font-weight:700;letter-spacing:1px;font-size:16px;padding:14px 18px;clip-path:polygon(0 0,100% 0,98% 100%,0 100%);">ATTENTION SUMMARY</div>
+    ;;
+  }
+
+  block k_avg_attention: VizBlock {
+    label: 'Avg Attention in Seconds'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(attention.campaign_average_attention_seconds)
+          label: 'Avg Attention in Seconds'
+          format {
+            type: 'number'
+            pattern: '#,###0.0'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-k-avg-attention {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-head-k-avg-attention {
+          font-size: 15px;
+          font-weight: 600;
+          margin-bottom: 10px;
+          color: inherit;
+        }
+        .bd-caption-k-avg-attention {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4;
+        }
+        .bd-value-k-avg-attention {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-k-avg-attention">
+          <div class="bd-head-k-avg-attention">Average Attention</div>
+          <div class="bd-caption-k-avg-attention">Avg Attention in Seconds</div>
+          <div class="bd-value-k-avg-attention">{{ rows[0].values.`Avg Attention in Seconds`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block k_active_attention: VizBlock {
+    label: 'Active Attention'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(attention.active_attention_rate)
+          label: 'Active Attention'
+          format {
+            type: 'number'
+            pattern: '#,###0.0%'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-k-active-attention {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-head-k-active-attention {
+          font-size: 15px;
+          font-weight: 600;
+          margin-bottom: 10px;
+          color: inherit;
+        }
+        .bd-caption-k-active-attention {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4;
+        }
+        .bd-value-k-active-attention {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-k-active-attention">
+          <div class="bd-head-k-active-attention">Active Attention</div>
+          <div class="bd-caption-k-active-attention">Active Attention</div>
+          <div class="bd-value-k-active-attention">{{ rows[0].values.`Active Attention`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block k_vs_digital: VizBlock {
+    label: 'vs avg Digital/DOOH'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(attention.attention_vs_digital_dooh)
+          label: 'vs avg Digital/DOOH'
+          format {
+            type: 'number'
+            pattern: '#,###0.0%'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-k-vs-digital {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-head-k-vs-digital {
+          font-size: 15px;
+          font-weight: 600;
+          margin-bottom: 10px;
+          color: inherit;
+        }
+        .bd-caption-k-vs-digital {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4;
+        }
+        .bd-value-k-vs-digital {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-k-vs-digital">
+          <div class="bd-head-k-vs-digital">vs Other Mediums</div>
+          <div class="bd-caption-k-vs-digital">vs avg Digital/DOOH</div>
+          <div class="bd-value-k-vs-digital">{{ rows[0].values.`vs avg Digital/DOOH`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block k_vs_ooh: VizBlock {
+    label: 'vs avg Traditional OOH'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(attention.attention_vs_traditional_ooh)
+          label: 'vs avg Traditional OOH'
+          format {
+            type: 'number'
+            pattern: '#,###0.0%'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-k-vs-ooh {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-head-k-vs-ooh {
+          font-size: 15px;
+          font-weight: 600;
+          margin-bottom: 10px;
+          color: inherit;
+        }
+        .bd-caption-k-vs-ooh {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4;
+        }
+        .bd-value-k-vs-ooh {
+          font-size: 30px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-k-vs-ooh">
+          <div class="bd-head-k-vs-ooh">&nbsp;</div>
+          <div class="bd-caption-k-vs-ooh">vs avg Traditional OOH</div>
+          <div class="bd-value-k-vs-ooh">{{ rows[0].values.`vs avg Traditional OOH`.formatted }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block k_vs_network: VizBlock {
+    label: 'Attention Seconds vs Network'
+    settings {
+      hide_label: true
+    }
+    viz: MarkdownViz {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(attention.attention_vs_network_label)
+          label: 'Attention Seconds vs Network'
+          format {
+            type: 'text'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .bd-card-k-vs-network {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          height: 100%;
+          padding: 0.5rem;
+          box-sizing: border-box;
+        }
+        .bd-head-k-vs-network {
+          font-size: 15px;
+          font-weight: 600;
+          margin-bottom: 10px;
+          color: inherit;
+        }
+        .bd-caption-k-vs-network {
+          font-size: 13px;
+          margin-bottom: 4px;
+          color: #6C4DC4;
+        }
+        .bd-value-k-vs-network {
+          font-size: 24px;
+          font-weight: 400;
+          line-height: 1.25;
+          color: #6C4DC4;
+        }
+        </style>
+
+        <div class="bd-card-k-vs-network">
+          <div class="bd-head-k-vs-network">vs Our Network</div>
+          <div class="bd-caption-k-vs-network">Attention Seconds vs Network</div>
+          <div class="bd-value-k-vs-network">{{ rows[0].values.`Attention Seconds vs Network`.raw }}</div>
+        </div>
+      ;;
+    }
+  }
+
+  block t_avg_attention: TextBlock {
+    content: @md
+<div style="font-size:12px;line-height:1.45;opacity:0.85;">Our anonymous video analytics (AVA) data tells you the average time people spent watching your ad. To calculate this, we use data based on when attention is given to our screens during the time of our ad plays.</div>
+    ;;
+  }
+
+  block t_active_attention: TextBlock {
+    content: @md
+<div style="font-size:12px;line-height:1.45;opacity:0.85;">Attention longer than 2.5 seconds significantly increases recall and is considered to be Active Attention.</div>
+    ;;
+  }
+
+  block t_mediums: TextBlock {
+    content: @md
+<div style="font-size:12px;line-height:1.45;opacity:0.85;">Traditional billboards are typically viewed for around 2 seconds and digital ads (including DOOH) for even less time at around 1.5 seconds. This metric shows your elevator ad view time compared to these benchmarks.</div>
+    ;;
+  }
+
+  block t_network: TextBlock {
+    content: @md
+<div style="font-size:12px;line-height:1.45;opacity:0.85;">This metric compares your campaign's attention average to all other campaigns on the network. If you'd like an in-depth analysis, consider our Premium tier Reporting.</div>
+    ;;
+  }
+
+  block v_attention_over_time: VizBlock {
+    label: 'Attention Over Time'
+    viz: CombinationChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      x_axis: VizFieldFull {
+        ref: r(attention_base.start_date_local)
+        label: 'Start At Local Date'
+        format {
+          type: 'date'
+          pattern: 'LLL d'
+        }
+      }
+      y_axis {
+        label: 'Attention'
+        series {
+          mark_type: 'line'
+          field: VizFieldFull {
+            ref: r(attention.attention_vs_campaign)
+            label: 'Attention'
+            format {
+              type: 'number'
+              pattern: '#,###0.00%'
+            }
+          }
+          settings {
+            color: '#6C4DC4'
+          }
+        }
+      }
+      settings {
+        legend_label: 'hidden'
+        show_data_points: false
+        row_limit: 1000
+        sort: LineFamilySort {
+          type: 'xaxis'
+          direction: 'asc'
+        }
+      }
+    }
+  }
+
+  block t_over_time: TextBlock {
+    content: @md
+<div style="font-size:13px;line-height:1.5;"><b>About Ad Attention over Time:</b> this graph shows fluctuations in overall attention across all demographics during your campaign. Ad attention can be impacted by the day of the week, ad frequency, ad fatigue, geo-political events, weather, and many more factors.</div>
+    ;;
+  }
+
+  block t_audience_banner: TextBlock {
+    content: @md
+<div style="background:#6C4DC4;color:#ffffff;font-weight:700;letter-spacing:1px;font-size:16px;padding:14px 18px;clip-path:polygon(0 0,100% 0,98% 100%,0 100%);">AUDIENCE SUMMARY</div>
+    ;;
+  }
+
+  block t_audience: TextBlock {
+    content: @md
+<div style="font-size:13px;line-height:1.5;"><b>Ad Attention by Demographic:</b> This shows how your campaign performed across demographic groups (gender and age).</div>
+    ;;
+  }
+
+  block v_gender_cards: VizBlock {
+    label: 'Overall Demographic Attention'
+    viz: MarkdownViz {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      rows: [
+        VizFieldFull {
+          ref: r(attention_base.gender)
+          label: 'Gender'
+        }
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Average Attention'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        }
+      ]
+      content: @md
+        <style>
+        .gc-wrap {
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+          align-items: stretch;
+          height: 100%;
+        }
+        .gc-card {
+          flex: 1;
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          text-align: center;
+          border: 1px solid rgba(128, 128, 128, 0.35);
+          border-radius: 6px;
+          padding: 8px;
+        }
+        .gc-cap {
+          font-size: 12px;
+          margin-bottom: 2px;
+        }
+        .gc-val {
+          font-size: 24px;
+          line-height: 1.25;
+        }
+        .gc-Women { color: #6C4DC4; }
+        .gc-Men { color: #1FC8B8; }
+        </style>
+
+        <div class="gc-wrap">
+          {% map(rows) %}
+          <div class="gc-card">
+            <div class="gc-{{ `Gender`.raw }}"><div class="gc-cap">Gender</div><div class="gc-val">{{ `Gender`.raw }}</div></div>
+            <div><div class="gc-cap">Average Attention</div><div class="gc-val">{{ values.`Average Attention`.formatted }}</div></div>
+          </div>
+          {% end %}
+        </div>
+      ;;
+    }
+  }
+
+  block v_demographic: VizBlock {
+    label: 'Ad Attention by Demographic'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(attention_base.gender)
+          label: 'Gender'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.age_group)
+          label: 'Age Group'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Average Attention'
+          format {
+            type: 'number'
+            pattern: '#,###0.0'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_gender_average)
+          label: 'Attention'
+          format {
+            type: 'number'
+            pattern: '#,###0.00%'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        row_limit: 100
+        sorts: [
+          IndexBasedSortSetting {
+            field_index: 0
+            direction: 'asc'
+          },
+          IndexBasedSortSetting {
+            field_index: 1
+            direction: 'asc'
+          }
+        ]
+      }
+    }
+  }
+
+  block v_gender_donut: VizBlock {
+    label: 'Audience Gender Breakdown'
+    viz: PieChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      filter {
+        field: r(attention_base.gender_pie)
+        operator: 'is_not'
+        value: 'Not Confident'
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      legend: VizFieldFull {
+        ref: r(attention_base.gender_pie)
+        label: 'Gender'
+        format {
+          type: 'text'
+        }
+      }
+      series {
+        field: VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+        settings {
+          point {
+            value: 'Men'
+            color: '#1FC8B8'
+          }
+          point {
+            value: 'Women'
+            color: '#6C4DC4'
+          }
+        }
+      }
+      settings {
+        display_as_donut: true
+        legend_label: 'right'
+        show_data_label: false
+        show_percentage: true
+        row_limit: 100
+      }
+    }
+  }
+
+  block v_age_donut: VizBlock {
+    label: 'Audience Age Breakdown'
+    viz: PieChart {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      filter {
+        field: r(attention_base.gender_pie)
+        operator: 'is_not'
+        value: 'Not Confident'
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      legend: VizFieldFull {
+        ref: r(attention_base.age_group)
+        label: 'Age Group'
+        format {
+          type: 'text'
+        }
+      }
+      series {
+        field: VizFieldFull {
+          ref: r(attention.campaign_datapoints)
+          label: 'Datapoints'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      }
+      settings {
+        display_as_donut: true
+        legend_label: 'right'
+        show_data_label: false
+        show_percentage: true
+        row_limit: 100
+      }
+    }
+  }
+
+  block t_creative_banner: TextBlock {
+    content: @md
+<div style="background:#6C4DC4;color:#ffffff;font-weight:700;letter-spacing:1px;font-size:16px;padding:14px 18px;clip-path:polygon(0 0,100% 0,98% 100%,0 100%);">CREATIVE SUMMARY</div>
+    ;;
+  }
+
+  block t_creative: TextBlock {
+    content: @md
+<div style="font-size:13px;line-height:1.5;"><b>About Ad Attention By Creative:</b> This chart shows a breakdown of each creative your flight ran, along with the amount of served impressions, average attention in seconds, and ad attention score. Use this to learn which creative performed the best overall.</div>
+    ;;
+  }
+
+  block v_creatives: VizBlock {
+    label: 'Ad Creative Performance'
+    viz: DataTable {
+      dataset: attention
+      filter {
+        field: r(attention_base.is_in_flight_range)
+        operator: 'is'
+        value: true
+      }
+      conditions: [
+        'filter_model.report_filter in attention_base.report_filter'
+      ]
+      fields: [
+        VizFieldFull {
+          ref: r(ad_facts.campaign_id)
+          label: 'Campaign ID'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention_base.ad_id)
+          label: 'Ad ID'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(ad_facts.name)
+          label: 'Name'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(ad_facts.type)
+          label: 'Type'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(ad_facts.date_range)
+          label: 'Date Range'
+          format {
+            type: 'text'
+          }
+        },
+        VizFieldFull {
+          ref: r(ad_facts.date_progress)
+          label: 'Date Progress'
+          format {
+            type: 'number'
+            pattern: '#,###0%'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_seconds_average)
+          label: 'Avg Attention Sec'
+          format {
+            type: 'number'
+            pattern: '#,###0.00'
+          }
+        },
+        VizFieldFull {
+          ref: r(attention.attention_vs_campaign)
+          label: 'Ad Attention %'
+          format {
+            type: 'number'
+            pattern: '#,###0.00%'
+          }
+        }
+      ]
+      settings {
+        show_row_number: true
+        wrap_cell_text: true
+        row_limit: 1000
+        sorts: [
+          IndexBasedSortSetting {
+            field_index: 6
+            direction: 'asc'
+          }
+        ]
+      }
+    }
+  }
+
+  block v_imp_week_creative: VizBlock {
+    label: 'Impressions by Week and Creative'
+    viz: PivotTable {
+      dataset: vplus_delivery
+      rows: [
+        VizFieldFull {
+          ref: r(vplus_served_impressions.ad_id)
+          label: 'Ad ID'
+          format {
+            type: 'text'
+          }
+        }
+      ]
+      columns: [
+        VizFieldFull {
+          ref: r(vplus_served_impressions.date)
+          label: 'Date Week'
+          transformation: 'datetrunc week'
+          format {
+            type: 'date'
+            pattern: 'yyyy-MM-dd'
+          }
+        }
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.served_impressions)
+          label: 'Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      settings {
+        show_row_total: false
+        show_column_total: false
+        row_limit: 5000
+      }
+    }
+  }
+
+  block v_imp_week_property: VizBlock {
+    label: 'Impressions by Week and Property'
+    viz: PivotTable {
+      dataset: vplus_delivery
+      rows: [
+        VizFieldFull {
+          ref: r(vplus_property_impressions.property_id)
+          label: 'ID'
+          format {
+            type: 'number'
+            pattern: '0'
+          }
+        },
+        VizFieldFull {
+          ref: r(vplus_property_impressions.property_name)
+          label: 'Name'
+          format {
+            type: 'text'
+          }
+        }
+      ]
+      columns: [
+        VizFieldFull {
+          ref: r(vplus_property_impressions.date)
+          label: 'Date Week'
+          transformation: 'datetrunc week'
+          format {
+            type: 'date'
+            pattern: 'yyyy-MM-dd'
+          }
+        }
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.property_impressions)
+          label: 'Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      settings {
+        show_row_total: false
+        show_column_total: false
+        row_limit: 5000
+      }
+    }
+  }
+
+  block v_imp_week_city: VizBlock {
+    label: 'Impressions by Week and City'
+    viz: PivotTable {
+      dataset: vplus_delivery
+      rows: [
+        VizFieldFull {
+          ref: r(vplus_property_impressions.city)
+          label: 'City'
+          format {
+            type: 'text'
+          }
+        }
+      ]
+      columns: [
+        VizFieldFull {
+          ref: r(vplus_property_impressions.date)
+          label: 'Date Week'
+          transformation: 'datetrunc week'
+          format {
+            type: 'date'
+            pattern: 'yyyy-MM-dd'
+          }
+        }
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.property_impressions)
+          label: 'Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      settings {
+        show_row_total: false
+        show_column_total: false
+        row_limit: 5000
+      }
+    }
+  }
+
+  block v_imp_day_city: VizBlock {
+    label: 'Impressions by Day and City'
+    viz: PivotTable {
+      dataset: vplus_delivery
+      rows: [
+        VizFieldFull {
+          ref: r(vplus_property_impressions.city)
+          label: 'City'
+          format {
+            type: 'text'
+          }
+        }
+      ]
+      columns: [
+        VizFieldFull {
+          ref: r(vplus_property_impressions.date)
+          label: 'Date Day'
+          transformation: 'datetrunc day'
+          format {
+            type: 'date'
+            pattern: 'yyyy-MM-dd'
+          }
+        }
+      ]
+      values: [
+        VizFieldFull {
+          ref: r(vplus_delivery.property_impressions)
+          label: 'Impressions'
+          format {
+            type: 'number'
+            pattern: '#,###'
+          }
+        }
+      ]
+      settings {
+        show_row_total: false
+        show_column_total: false
+        row_limit: 5000
+      }
+    }
+  }
+
+  block t_disclaimer: TextBlock {
+    content: @md
+<div style="font-size:13px;line-height:1.5;"><div style="font-size:18px;font-weight:700;text-align:center;padding-bottom:6px;">Disclaimer</div>
+<p><b>About our data collection:</b> We collect a statistically significant sample of audience traffic in elevators to provide results for each campaign. In cases where we do not collect enough data in a specific area, we will omit those results from this dashboard.</p>
+<p><b>About Ad Attention:</b> Our proprietary metric. It tells you which audiences are most engaged, relative to the rest of the campaign. It is calculated from thousands of real-time data points.</p>
+<p>Ad attention measures are derived from Anonymous Video Analytics (AVA), which is subject to many factors such as changes in lighting, mount position of the screen, updates to facial detection and demographic analysis algorithms. AVA uses AI pattern detection algorithms to scan real-time video feeds, looking for patterns that match the software's understanding of faces.</p></div>
+    ;;
+  }
+
+  block t_dictionary: TextBlock {
+    content: @md
+### Data Dictionary
+
+| Metric | Definition |
+|---|---|
+| Attention vs Campaign Average | % difference of certain segment's average attention seconds compared to your overall campaign average |
+| Active Attention | Attention longer than 2.5 seconds* significantly increases recall and is considered Active Attention |
+| Attention Seconds vs Digital/DOOH benchmark | Average time spent viewing your ad, compared to 1.5 seconds* benchmark typically attained by other Digital/DOOH media. |
+| Attention Seconds vs Static OOH | Average time spent viewing your ad compared to 2.0 seconds* benchmark typically attained by Static OOH media |
+    ;;
+  }
+
+  interactions: [
+    FilterInteraction {
+      from: 'flight_id'
+      to: [
+        CustomMapping {
+          block: [
+            'v_date_range',
+            'v_screen_count',
+            'v_provinces',
+            'v_cpm',
+            'v_booked_impressions',
+            'v_impressions',
+            'v_bonus_impressions',
+            'v_total_contract_cost',
+            'v_rate_card_value',
+            'v_bonus_value',
+            'v_imp_week_creative',
+            'v_imp_week_property',
+            'v_imp_week_city',
+            'v_imp_day_city'
+          ]
+          field: r(vplus_flight_facts.campaign_id)
+        },
+        CustomMapping {
+          block: [
+            'k_avg_attention',
+            'k_active_attention',
+            'k_vs_digital',
+            'k_vs_ooh',
+            'k_vs_network',
+            'v_attention_over_time',
+            'v_gender_cards',
+            'v_demographic',
+            'v_gender_donut',
+            'v_age_donut',
+            'v_creatives'
+          ]
+          field: r(attention_base.report_filter)
+        }
+      ]
+    }
+  ]
+
+  view: TabLayout {
+    tab main: CanvasLayout {
+      label: 'Core Dashboard'
+      width: 1220
+      height: 5360
+      grid_size: 20
+      auto_expand_vertically: true
+      block flight_id { position: pos(20, 20, 280, 100) layer: 1 }
+      block t_header { position: pos(20, 140, 880, 80) layer: 1 }
+      block t_logo { position: pos(920, 140, 280, 80) layer: 1 }
+      block v_date_range { position: pos(20, 240, 580, 160) layer: 1 }
+      block v_screen_count { position: pos(620, 240, 180, 160) layer: 1 }
+      block v_cpm { position: pos(820, 240, 180, 160) layer: 1 }
+      block v_provinces { position: pos(1020, 240, 180, 160) layer: 1 }
+      block t_impressions { position: pos(20, 420, 280, 120) layer: 1 }
+      block v_booked_impressions { position: pos(320, 420, 280, 120) layer: 1 }
+      block v_impressions { position: pos(620, 420, 280, 120) layer: 1 }
+      block v_bonus_impressions { position: pos(920, 420, 280, 120) layer: 1 }
+      block t_contract { position: pos(20, 560, 280, 120) layer: 1 }
+      block v_total_contract_cost { position: pos(320, 560, 280, 120) layer: 1 }
+      block v_rate_card_value { position: pos(620, 560, 280, 120) layer: 1 }
+      block v_bonus_value { position: pos(920, 560, 280, 120) layer: 1 }
+      block t_attention_banner { position: pos(20, 700, 880, 80) layer: 1 }
+      block k_avg_attention { position: pos(20, 800, 220, 160) layer: 1 }
+      block k_active_attention { position: pos(260, 800, 220, 160) layer: 1 }
+      block k_vs_digital { position: pos(500, 800, 220, 160) layer: 1 }
+      block k_vs_ooh { position: pos(740, 800, 220, 160) layer: 1 }
+      block k_vs_network { position: pos(980, 800, 220, 160) layer: 1 }
+      block t_avg_attention { position: pos(20, 980, 220, 160) layer: 1 }
+      block t_active_attention { position: pos(260, 980, 220, 160) layer: 1 }
+      block t_mediums { position: pos(500, 980, 460, 160) layer: 1 }
+      block t_network { position: pos(980, 980, 220, 160) layer: 1 }
+      block v_attention_over_time { position: pos(20, 1160, 1180, 380) layer: 1 }
+      block t_over_time { position: pos(20, 1560, 1180, 100) layer: 1 }
+      block t_audience_banner { position: pos(20, 1680, 880, 80) layer: 1 }
+      block t_audience { position: pos(20, 1780, 1180, 80) layer: 1 }
+      block v_gender_cards { position: pos(20, 1880, 580, 160) layer: 1 }
+      block v_demographic { position: pos(20, 2060, 580, 440) layer: 1 }
+      block v_gender_donut { position: pos(620, 1880, 580, 300) layer: 1 }
+      block v_age_donut { position: pos(620, 2200, 580, 300) layer: 1 }
+      block t_creative_banner { position: pos(20, 2520, 880, 80) layer: 1 }
+      block t_creative { position: pos(20, 2620, 1180, 100) layer: 1 }
+      block v_creatives { position: pos(20, 2740, 1180, 520) layer: 1 }
+      block v_imp_week_creative { position: pos(20, 3280, 1180, 460) layer: 1 }
+      block v_imp_week_property { position: pos(20, 3760, 1180, 460) layer: 1 }
+      block v_imp_week_city { position: pos(20, 4240, 1180, 220) layer: 1 }
+      block v_imp_day_city { position: pos(20, 4480, 1180, 220) layer: 1 }
+      block t_disclaimer { position: pos(20, 4720, 1180, 300) layer: 1 }
+      block t_dictionary { position: pos(20, 5040, 1180, 300) layer: 1 }
+      mobile { mode: 'auto' }
+    }
+  }
+}

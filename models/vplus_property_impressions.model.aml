@@ -1,0 +1,86 @@
+Model vplus_property_impressions {
+  type: 'query'
+  label: 'V+ Property Impressions'
+  description: 'Served impressions from data_pipeline.plays_summary at campaign x property x date, clipped to the flight window of the campaign/ad pair in data_pipeline.stg_campaigns (the same window as vplus_served_impressions). Property name and city come from data_pipeline.properties joined on plays_summary.property_id = properties.property_number (never properties.id), with the Looker property filters (Canada, not test, not deleted). Feeds the Impressions by Week/Day and Property/City tables on the Core Dashboard.'
+  data_source_name: 'vc_data_warehouse'
+
+  dimension campaign_id {
+    label: 'Campaign Id'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.campaign_id }};;
+  }
+  dimension date {
+    label: 'Date'
+    type: 'date'
+    hidden: false
+    definition: @sql {{ #SOURCE.date }};;
+  }
+  dimension property_id {
+    label: 'Property ID'
+    type: 'number'
+    hidden: false
+    description: 'plays_summary.property_id = properties.property_number.'
+    definition: @sql {{ #SOURCE.property_id }};;
+  }
+  dimension property_name {
+    label: 'Property Name'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.property_name }};;
+  }
+  dimension city {
+    label: 'City'
+    type: 'text'
+    hidden: false
+    definition: @sql {{ #SOURCE.city }};;
+  }
+  dimension impressions {
+    label: 'Impressions'
+    type: 'number'
+    hidden: false
+    definition: @sql {{ #SOURCE.impressions }};;
+  }
+
+  owner: 'ganonuevo@verticalcity.com'
+  query: @sql
+    WITH windows AS (
+      SELECT
+        CAST(campaign_id AS STRING) AS campaign_id,
+        ad_id,
+        MIN(DATE(start_at)) AS window_start,
+        MAX(DATE(end_at)) AS window_end
+      FROM `data_pipeline.stg_campaigns`
+      WHERE ad_id IS NOT NULL
+      GROUP BY 1, 2
+    ),
+    props AS (
+      SELECT
+        property_number,
+        name AS property_name,
+        city
+      FROM `data_pipeline.properties`
+      WHERE country = 'Canada'
+        AND test = false
+        AND is_deleted = false
+    )
+    SELECT
+      p.campaign_id,
+      p.date,
+      p.property_id,
+      pr.property_name,
+      pr.city,
+      SUM(p.impressions) AS impressions
+    FROM `data_pipeline.plays_summary` p
+    INNER JOIN windows w
+      ON COALESCE(CAST(p.campaign_id AS STRING), '') = COALESCE(w.campaign_id, '')
+     AND p.ad_id = w.ad_id
+     AND p.date BETWEEN w.window_start AND w.window_end
+    LEFT JOIN props pr
+      ON p.property_id = pr.property_number
+    WHERE p.ad_id IS NOT NULL
+      AND p.campaign_id IS NOT NULL
+    GROUP BY 1, 2, 3, 4, 5;;
+  models: [
+  ]
+}

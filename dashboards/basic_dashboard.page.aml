@@ -10,7 +10,7 @@ Dashboard basic_dashboard {
   // The default is kept on purpose: every tile is a sum over the selected flights, so an empty
   // control would add up every flight in raw_campaigns.
   // ---------------------------------------------------------------------------
-  block f_flight: FilterBlock {
+  block flight_id: FilterBlock {
     label: 'Flight ID'
     type: 'field'
     source: FieldFilterSource {
@@ -606,7 +606,7 @@ Dashboard basic_dashboard {
 
   interactions: [
     FilterInteraction {
-      from: 'f_flight'
+      from: 'flight_id'
       to: [
         CustomMapping {
           block: [
@@ -637,7 +637,7 @@ Dashboard basic_dashboard {
       auto_expand_vertically: true
       block t_header { position: pos(20, 140, 880, 80) layer: 1 }
       block t_logo { position: pos(920, 140, 280, 80) layer: 1 }
-      block f_flight { position: pos(20, 20, 280, 100) layer: 1 }
+      block flight_id { position: pos(20, 20, 280, 100) layer: 1 }
       block v_campaign_name { position: pos(20, 260, 1180, 160) layer: 1 }
       block v_date_range { position: pos(20, 440, 580, 160) layer: 1 }
       block v_screen_count { position: pos(620, 440, 180, 160) layer: 1 }

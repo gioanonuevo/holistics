@@ -9,14 +9,26 @@ Dataset vplus_delivery {
     vplus_flight_facts,
     vplus_served_impressions,
     vplus_flight_screens,
+    vplus_property_impressions,
     data_pipeline_raw_ads,
     data_pipeline_raw_campaigns
   ]
 
   relationships: [
     relationship(vplus_served_impressions.campaign_id > vplus_flight_facts.campaign_id, true, direction: 'two_way'),
-    relationship(vplus_flight_screens.campaign_id > vplus_flight_facts.campaign_id, true)
+    relationship(vplus_flight_screens.campaign_id > vplus_flight_facts.campaign_id, true),
+    relationship(vplus_property_impressions.campaign_id > vplus_flight_facts.campaign_id, true)
   ]
+
+  // ---- Core Dashboard: served impressions by property / city (plays_summary) ----
+
+  metric property_impressions {
+    label: 'Impressions (by property)'
+    type: 'number'
+    description: 'Served impressions inside the flight window at property x date grain (plays_summary). Same total as Served Impressions; use it in tables grouped by property, city or date.'
+    definition: @aql sum(vplus_property_impressions.impressions);;
+    format: '#,###'
+  }
 
   // ---- Basic Dashboard: screens that played the flight (plays_summary) ----
 

@@ -386,3 +386,14 @@ items: creative display names (config creative_names), slide 4 photo, map pins, 
 Known gaps: ad names are ids (elev8_ads_ads names are codes); screen count = screens with attention (21), not active screens.
 
 **2026-10-26:** full maintainer documentation is in the Windows clone at vplus_deck/DEVELOPER_GUIDE.md (datasets, metrics, id spaces, package modules, template map, change procedures) with vplus_deck/CHANGELOG.md. The vplus AML files (models/vplus_*, properties, screens, creative_img, datasets/vplus_delivery, dashboards/vplus_report_extract) were still untracked in git here; commit them.
+
+## 12. One control for two datasets (2026-11-27)
+
+Correction to section 2 ("a dimension-sourced filter does NOT feed a param"): that holds for the default wiring only.
+With an explicit `interactions: [ FilterInteraction { from: '<control>' to: [ CustomMapping { block: [...] field: r(...) } ] } ]`
+one FilterBlock can be mapped to a different field per block, across datasets, and the mapping DOES reach a param.
+Confirmed by the user in the UI with two test copies of the Core Dashboard (both directions worked: a control sourced
+from `attention_base.report_filter` mapped to `vplus_flight_facts.campaign_id`, and a control sourced from
+`vplus_flight_facts.campaign_id` mapped to the param). `dashboards/core_dashboard.page.aml` uses the second form:
+one Flight ID control (`f_flight`) drives the `vplus_delivery` blocks by dimension and the `attention` blocks by param.
+`execute_viz_block` still ignores dashboard controls, so this can only be checked in the UI.
